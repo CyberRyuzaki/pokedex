@@ -1068,85 +1068,100 @@ async function fetchTcgCards(pokemon) {
 
   body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Suche Karten für ${deName}...</div>`;
 
-  try {
-    // pokemontcg.io - exakte Namenssuche mit API Key
-    const url = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(enName)}"&pageSize=250&orderBy=set.releaseDate`;
-    const res = await fetch(url, {
-      headers: { 'X-Api-Key': POKETCG_KEY }
-    });
-    if (!res.ok) throw new Error('Status ' + res.status);
-    const data = await res.json();
-    const cards = (data.data || []).filter(c =>
-      c.name.toLowerCase() === enName.toLowerCase()
-    );
+  // CORS-Proxy Liste - versuche nacheinander bis einer klappt
+  const proxies = [
+    (url, key) => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, { headers: { 'X-Api-Key': key } }),
+    (url, key) => fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`).then(async r => {
+      const d = await r.json();
+      return new Response(d.contents, { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }),
+    (url, key) => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`),
+    (url, key) => fetch(url, { headers: { 'X-Api-Key': key }, mode: 'cors' }),
+    (url, key) => fetch(url, { headers: { 'X-Api-Key': key } }),
+  ];
 
-    if (cards.length === 0) {
-      body.innerHTML = `<div class="tcg-empty">😔 Keine TCG Karten für <b>${deName}</b> gefunden.</div>`;
-      return;
+  const apiUrl = `https://api.pokemontcg.io/v2/cards?q=name:"${encodeURIComponent(enName)}"&pageSize=250&orderBy=set.releaseDate`;
+
+  let cards = null;
+  for (const proxyFn of proxies) {
+    try {
+      const res = await proxyFn(apiUrl, POKETCG_KEY);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const raw = data.data || data; // allorigins wraps differently
+      if (Array.isArray(raw) && raw.length > 0) {
+        cards = raw.filter(c => c.name && c.name.toLowerCase() === enName.toLowerCase());
+        if (cards.length > 0) break;
+        cards = raw; // fallback: take all results
+        break;
+      }
+      if (raw.data && Array.isArray(raw.data)) {
+        cards = raw.data.filter(c => c.name && c.name.toLowerCase() === enName.toLowerCase());
+        if (cards.length > 0) break;
+      }
+    } catch(e) {
+      continue;
     }
-
-    // Nach Set gruppieren
-    const sets = {};
-    cards.forEach(card => {
-      const setName = card.set?.name || 'Unbekannt';
-      const setDate = card.set?.releaseDate || '9999/99/99';
-      if (!sets[setName]) sets[setName] = { name: setName, date: setDate, cards: [] };
-      sets[setName].cards.push(card);
-    });
-
-    const sortedSets = Object.values(sets).sort((a, b) => a.date.localeCompare(b.date));
-
-    body.innerHTML = `<div class="modal-count">${cards.length} Karte${cards.length !== 1 ? 'n' : ''} in ${sortedSets.length} Set${sortedSets.length !== 1 ? 's' : ''}</div>`;
-
-    sortedSets.forEach(({ name: setName, date, cards: setCards }) => {
-      const group = document.createElement('div');
-      group.className = 'tcg-set-group';
-      const year = date && date !== '9999/99/99'
-        ? ` <span style="color:var(--text-muted);font-weight:400">(${date.substring(0, 4)})</span>` : '';
-      group.innerHTML = `<div class="tcg-set-title">${setName}${year}</div>`;
-
-      const cardsGrid = document.createElement('div');
-      cardsGrid.className = 'tcg-cards';
-
-      setCards.forEach(card => {
-        const cardEl = document.createElement('div');
-        cardEl.className = 'tcg-card';
-        cardEl.title = `${card.name} · ${setName} #${card.number}`;
-        cardEl.onclick = () => window.open(`https://www.pokemon.com/de/pokemonkarten/${card.id}`, '_blank');
-
-        const imgUrl     = card.images?.small || '';
-        const imgUrlHigh = card.images?.large || '';
-
-        cardEl.innerHTML = `
-          ${imgUrl
-            ? `<div class="card-img-wrap">
-                <div class="card-img-skeleton"></div>
-                <img src="${imgUrl}" alt="${card.name}" loading="lazy"
-                     onload="this.previousElementSibling.style.display='none';this.style.opacity='1'"
-                     onerror="tcgImgError(this, '${imgUrlHigh}')"
-                     style="opacity:0;transition:opacity 0.3s;position:relative;z-index:1">
-               </div>`
-            : `<div style="aspect-ratio:0.715;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:20px">🃏</div>`
-          }
-          <div class="tcg-card-name">#${card.number || '?'}</div>
-        `;
-        cardsGrid.appendChild(cardEl);
-      });
-
-      group.appendChild(cardsGrid);
-      body.appendChild(group);
-    });
-
-  } catch(e) {
-    console.error('TCG fetch error:', e);
-    body.innerHTML = `
-      <div class="tcg-error">
-        ⚠️ Karten konnten nicht geladen werden.<br>
-        <span style="font-size:11px;color:var(--text-muted);margin-top:8px;display:block">
-          Prüfe deine Internetverbindung.<br>${e.message}
-        </span>
-      </div>`;
   }
+
+  if (!cards || cards.length === 0) {
+    body.innerHTML = `<div class="tcg-empty">😔 Keine TCG Karten für <b>${deName}</b> gefunden.<br>
+      <span style="font-size:11px;color:var(--text-muted);margin-top:6px;display:block">
+        Möglicherweise blockiert dein Browser externe Anfragen.
+      </span></div>`;
+    return;
+  }
+
+  // Nach Set gruppieren
+  const sets = {};
+  cards.forEach(card => {
+    const setName = card.set?.name || 'Unbekannt';
+    const setDate = card.set?.releaseDate || '9999/99/99';
+    if (!sets[setName]) sets[setName] = { name: setName, date: setDate, cards: [] };
+    sets[setName].cards.push(card);
+  });
+
+  const sortedSets = Object.values(sets).sort((a, b) => a.date.localeCompare(b.date));
+  body.innerHTML = `<div class="modal-count">${cards.length} Karte${cards.length !== 1 ? 'n' : ''} in ${sortedSets.length} Set${sortedSets.length !== 1 ? 's' : ''}</div>`;
+
+  sortedSets.forEach(({ name: setName, date, cards: setCards }) => {
+    const group = document.createElement('div');
+    group.className = 'tcg-set-group';
+    const year = date && date !== '9999/99/99'
+      ? ` <span style="color:var(--text-muted);font-weight:400">(${date.substring(0, 4)})</span>` : '';
+    group.innerHTML = `<div class="tcg-set-title">${setName}${year}</div>`;
+
+    const cardsGrid = document.createElement('div');
+    cardsGrid.className = 'tcg-cards';
+
+    setCards.forEach(card => {
+      const cardEl = document.createElement('div');
+      cardEl.className = 'tcg-card';
+      cardEl.title = `${card.name} · ${setName} #${card.number}`;
+      cardEl.onclick = () => window.open(`https://www.pokemon.com/de/pokemonkarten/${card.id}`, '_blank');
+
+      const imgUrl     = card.images?.small || '';
+      const imgUrlHigh = card.images?.large  || '';
+
+      cardEl.innerHTML = `
+        ${imgUrl
+          ? `<div class="card-img-wrap">
+              <div class="card-img-skeleton"></div>
+              <img src="${imgUrl}" alt="${card.name}" loading="lazy"
+                   onload="this.previousElementSibling.style.display='none';this.style.opacity='1'"
+                   onerror="tcgImgError(this, '${imgUrlHigh}')"
+                   style="opacity:0;transition:opacity 0.3s;position:relative;z-index:1">
+             </div>`
+          : `<div style="aspect-ratio:0.715;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:20px">🃏</div>`
+        }
+        <div class="tcg-card-name">#${card.number || '?'}</div>
+      `;
+      cardsGrid.appendChild(cardEl);
+    });
+
+    group.appendChild(cardsGrid);
+    body.appendChild(group);
+  });
 }
 
 document.getElementById('search').addEventListener('input', renderGrid);

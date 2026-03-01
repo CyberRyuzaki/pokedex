@@ -1084,11 +1084,19 @@ async function fetchTcgCards(pokemon) {
       let allCards = [];
       for (let i = 0; i < totalChunks; i++) {
         body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Lade Sets... ${i+1}/${totalChunks}</div>`;
-        try {
-          const r = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}&chunk=${i}`);
-          const d = await r.json();
-          allCards = allCards.concat(d.data || []);
-        } catch(e) {}
+        // Bis zu 3 Versuche pro Chunk
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const r = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}&chunk=${i}`);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const d = await r.json();
+            allCards = allCards.concat(d.data || []);
+            break; // Erfolg - nächster Chunk
+          } catch(e) {
+            if (attempt === 2) console.warn(`Chunk ${i} fehlgeschlagen nach 3 Versuchen`);
+            else await new Promise(r => setTimeout(r, 500)); // kurz warten
+          }
+        }
       }
       const seen = new Set();
       cards = allCards.filter(c => {
@@ -1098,11 +1106,13 @@ async function fetchTcgCards(pokemon) {
       });
       cards.sort((a, b) => (a.set?.releaseDate || '').localeCompare(b.set?.releaseDate || ''));
 
-      // Im Worker cachen für nächstes Mal
-      fetch(`${WORKER_URL}/cache?name=${encodeURIComponent(enName)}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cards)
-      }).catch(() => {});
+      // Nur cachen wenn wir genug Daten haben (mind. alle Chunks erfolgreich)
+      if (cards.length > 0) {
+        fetch(`${WORKER_URL}/cache?name=${encodeURIComponent(enName)}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cards)
+        }).catch(() => {});
+      }
     }
 
     if (cards.length === 0) {

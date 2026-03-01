@@ -361,8 +361,6 @@
   .t-steel { background: var(--steel); color: #333; }
   .t-fairy { background: var(--fairy); color: white; }
 </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -492,8 +490,8 @@ function loadCaught() {
 
 function saveCaught() {
   localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
-  if (firebaseReady && dbRef) {
-    dbRef.set([...caught]).catch(e => console.error('Firebase save error:', e));
+  if (firebaseReady && window._firebaseSet) {
+    window._firebaseSet([...caught]).catch(e => console.error('Firebase save error:', e));
   }
 }
 
@@ -512,19 +510,22 @@ function updateSyncStatus(status) {
   }
 }
 
-function initFirebase() {
+async function initFirebase() {
   if (FIREBASE_CONFIG.apiKey === "DEIN_API_KEY") {
     document.getElementById('firebase-hint').style.display = 'block';
     updateSyncStatus('error');
     return;
   }
   try {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const db = firebase.database();
-    dbRef = db.ref(FIREBASE_PATH);
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const { getDatabase, ref, set, onValue } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db = getDatabase(app);
+    dbRef = ref(db, FIREBASE_PATH);
 
     // Echtzeit-Listener: jede Änderung von allen Nutzern sofort sehen
-    dbRef.on('value', (snapshot) => {
+    onValue(dbRef, (snapshot) => {
       const data = snapshot.val();
       if (data && Array.isArray(data)) {
         caught = new Set(data);
@@ -540,6 +541,10 @@ function initFirebase() {
       console.error('Firebase error:', err);
       updateSyncStatus('error');
     });
+
+    // Override saveCaught to use modular API
+    window._firebaseSet = (data) => set(dbRef, data);
+
   } catch(e) {
     console.error('Firebase init error:', e);
     updateSyncStatus('error');
@@ -627,7 +632,7 @@ function renderGrid() {
            src="${p.sprite}"
            alt="${p.name}"
            loading="lazy"
-           onerror="this.src='https://placehold.co/80x80/16162a/7878a0?text=?'">
+           onerror="if(this.dataset.fb){this.src='https://placehold.co/80x80/16162a/7878a0?text=%23'+${p.id};}else{this.dataset.fb=1;this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png';}">
       <div class="poke-name-de">${germanNames[p.id] || p.name}</div>
       <div class="poke-name-en">${p.displayNameEn || p.name}</div>
       <div class="type-badges">${typeBadges}</div>
@@ -672,7 +677,7 @@ async function loadPokemonData() {
       displayNameEn: getPokemonEnName(id),
       types: typeData[id] || ['normal'],
       // Use sprites from a reliable source
-      sprite: `https://unpkg.com/pokeapi-sprites@2.0.2/sprites/pokemon/other/dream-world/${id}.svg`
+      sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${id}.svg`
     });
   }
 
@@ -704,4 +709,3 @@ document.getElementById('filter-type').addEventListener('change', renderGrid);
 </script>
 </body>
 </html>
-

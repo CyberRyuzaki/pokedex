@@ -1061,59 +1061,41 @@ function closeTcgModal() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTcgModal(); });
 
 async function fetchTcgCards(pokemon) {
-  // TCGdex API - suche parallel nach Name (DE+EN) UND dexId für maximale Abdeckung
   const body = document.getElementById('modal-body');
-  const deName = germanNames[pokemon.id] || '';
   const enName = pokemon.displayNameEn || '';
+  const deName = germanNames[pokemon.id] || enName;
 
   try {
-    // Parallel: Deutsch nach Name, Englisch nach Name, Deutsch nach dexId
-    const [deRes, enRes, dexRes] = await Promise.all([
-      fetch(`https://api.tcgdex.net/v2/de/cards?name=eq:${encodeURIComponent(deName)}&itemsPerPage=500`).catch(() => null),
-      fetch(`https://api.tcgdex.net/v2/en/cards?name=eq:${encodeURIComponent(enName)}&itemsPerPage=500`).catch(() => null),
-      fetch(`https://api.tcgdex.net/v2/de/cards?dexId=${pokemon.id}&itemsPerPage=500`).catch(() => null)
-    ]);
+    // Suche NUR auf Englisch - DE-Übersetzungen in TCGdex sind unvollständig
+    // Verwende exacte Suche: name=eq:Charmander
+    const res = await fetch(
+      `https://api.tcgdex.net/v2/en/cards?name=eq:${encodeURIComponent(enName)}&itemsPerPage=500`
+    );
+    if (!res.ok) throw new Error('Status ' + res.status);
+    const briefCards = await res.json();
 
-    const deCards  = deRes  && deRes.ok  ? await deRes.json()  : [];
-    const enCards  = enRes  && enRes.ok  ? await enRes.json()  : [];
-    const dexCards = dexRes && dexRes.ok ? await dexRes.json() : [];
-
-    // Zusammenführen & deduplizieren nach id
-    const seenIds = new Set();
-    const allBrief = [];
-    for (const c of [...(Array.isArray(deCards)?deCards:[]), ...(Array.isArray(enCards)?enCards:[])]) {
-      if (!seenIds.has(c.id)) { allBrief.push(c); seenIds.add(c.id); }
-    }
-    // dexId-Karten: nur wenn Name passt (filtert falsche Pokémon raus)
-    for (const c of (Array.isArray(dexCards)?dexCards:[])) {
-      const n = (c.name||'').toLowerCase();
-      if (!seenIds.has(c.id) && (n===deName.toLowerCase()||n===enName.toLowerCase())) {
-        allBrief.push(c); seenIds.add(c.id);
-      }
-    }
-
-    if (allBrief.length === 0) {
+    if (!Array.isArray(briefCards) || briefCards.length === 0) {
       body.innerHTML = `<div class="tcg-empty">😔 Keine TCG Karten für <b>${deName}</b> gefunden.</div>`;
       return;
     }
 
-    body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Lade ${allBrief.length} Karten...</div>`;
+    body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Lade ${briefCards.length} Karten...</div>`;
 
-    // Vollständige Kartendetails in Batches laden
+    // Vollständige Details laden (EN für Daten, aber wir zeigen DE-Namen)
     const fullCards = [];
     const batchSize = 20;
-    for (let i = 0; i < allBrief.length; i += batchSize) {
-      const batch = allBrief.slice(i, i + batchSize);
+    for (let i = 0; i < briefCards.length; i += batchSize) {
+      const batch = briefCards.slice(i, i + batchSize);
       const results = await Promise.all(
         batch.map(c =>
-          fetch(`https://api.tcgdex.net/v2/de/cards/${c.id}`)
+          fetch(`https://api.tcgdex.net/v2/en/cards/${c.id}`)
             .then(r => r.ok ? r.json() : null)
             .catch(() => null)
         )
       );
       fullCards.push(...results.filter(Boolean));
       const loadEl = body.querySelector('.modal-loading');
-      if (loadEl) loadEl.innerHTML = `<div class="spin"></div><br>Lade Karten... ${Math.min(i+batchSize,allBrief.length)}/${allBrief.length}`;
+      if (loadEl) loadEl.innerHTML = `<div class="spin"></div><br>Lade Karten... ${Math.min(i + batchSize, briefCards.length)}/${briefCards.length}`;
     }
 
     if (fullCards.length === 0) {
@@ -1121,7 +1103,7 @@ async function fetchTcgCards(pokemon) {
       return;
     }
 
-    // Nach Set gruppieren und nach Erscheinungsdatum sortieren
+    // Nach Set gruppieren + nach Erscheinungsdatum sortieren
     const sets = {};
     fullCards.forEach(card => {
       const setName = card.set?.name || 'Unbekannt';
@@ -1132,12 +1114,14 @@ async function fetchTcgCards(pokemon) {
 
     const sortedSets = Object.values(sets).sort((a, b) => a.date.localeCompare(b.date));
 
-    body.innerHTML = `<div class="modal-count">${fullCards.length} Karte${fullCards.length!==1?'n':''} in ${sortedSets.length} Set${sortedSets.length!==1?'s':''}</div>`;
+    body.innerHTML = `<div class="modal-count">${fullCards.length} Karte${fullCards.length !== 1 ? 'n' : ''} in ${sortedSets.length} Set${sortedSets.length !== 1 ? 's' : ''}</div>`;
 
     sortedSets.forEach(({ name: setName, date, cards: setCards }) => {
       const group = document.createElement('div');
       group.className = 'tcg-set-group';
-      const year = date && date !== '9999-99-99' ? ` <span style="color:var(--text-muted);font-weight:400">(${date.substring(0,4)})</span>` : '';
+      const year = date && date !== '9999-99-99'
+        ? ` <span style="color:var(--text-muted);font-weight:400">(${date.substring(0, 4)})</span>`
+        : '';
       group.innerHTML = `<div class="tcg-set-title">${setName}${year}</div>`;
 
       const cardsGrid = document.createElement('div');
@@ -1147,7 +1131,7 @@ async function fetchTcgCards(pokemon) {
         const cardEl = document.createElement('div');
         cardEl.className = 'tcg-card';
         cardEl.title = `${card.name} · ${setName} #${card.localId}`;
-        cardEl.onclick = () => window.open(`https://tcgdex.net/de/card/${card.id}`, '_blank');
+        cardEl.onclick = () => window.open(`https://tcgdex.net/en/card/${card.id}`, '_blank');
 
         const imgUrl     = card.image ? card.image + '/low.webp'  : '';
         const imgUrlHigh = card.image ? card.image + '/high.webp' : '';

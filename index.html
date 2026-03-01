@@ -71,6 +71,35 @@
 
   .logo span { color: var(--accent); }
 
+  #filter-toggle {
+    display: none;
+    margin: 6px auto 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #filter-toggle:hover { background: var(--border); color: var(--text); }
+  #controls-panel {
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    max-height: 300px;
+    opacity: 1;
+  }
+  #controls-panel.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  @media (max-width: 600px) {
+    #filter-toggle { display: block; }
+  }
+
   .progress-section {
     flex: 1;
     min-width: 250px;
@@ -673,8 +702,11 @@
       <div class="progress-bar-wrap">
         <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
       </div>
+      <button id="filter-toggle" onclick="toggleFilters()" aria-label="Filter ein-/ausklappen">
+        <span id="filter-toggle-icon">▲</span> Filter
+      </button>
     </div>
-    <div class="controls">
+    <div class="controls" id="controls-panel">
       <input type="text" id="search" placeholder="🔍 Suche Pokémon...">
       <select id="filter-caught">
         <option value="all">Alle anzeigen</option>
@@ -712,8 +744,8 @@
       </div>
       <button class="btn secondary" onclick="resetAll()">Reset</button>
     </div>
+    <div class="generation-tabs" id="gen-tabs" style="padding:0;margin:8px 0 0 0;max-width:100%"></div>
   </div>
-  <div class="generation-tabs" id="gen-tabs"></div>
 
   <div id="firebase-hint" style="display:none; background:#1a1a10; border:1.5px solid var(--gold); border-radius:8px; padding:12px 16px; margin-top:10px; max-width:1600px; margin-left:auto; margin-right:auto;">
     <b style="color:var(--gold)">⚙️ Firebase Konfiguration erforderlich für Sync</b><br>
@@ -1182,6 +1214,20 @@ async function fetchTcgCards(pokemon) {
         </span>
       </div>`;
   }
+}
+
+function toggleFilters() {
+  const panel = document.getElementById('controls-panel');
+  const icon = document.getElementById('filter-toggle-icon');
+  const collapsed = panel.classList.toggle('collapsed');
+  icon.textContent = collapsed ? '▼' : '▲';
+  localStorage.setItem('filtersCollapsed', collapsed);
+}
+
+// Restore collapse state
+if (localStorage.getItem('filtersCollapsed') === 'true') {
+  document.getElementById('controls-panel').classList.add('collapsed');
+  document.getElementById('filter-toggle-icon').textContent = '▼';
 }
 
 document.getElementById('search').addEventListener('input', renderGrid);

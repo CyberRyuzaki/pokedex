@@ -244,7 +244,7 @@
   .poke-img {
     width: 80px;
     height: 80px;
-    image-rendering: pixelated;
+    object-fit: contain;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
     transition: transform 0.2s;
   }
@@ -361,12 +361,14 @@
   .t-steel { background: var(--steel); color: #333; }
   .t-fairy { background: var(--fairy); color: white; }
 </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
 <header>
   <div class="header-inner">
-    <div class="logo">Pokémon<span>DEX</span></div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%"><div class="logo">Pokémon<span>DEX</span></div>
     <div class="progress-section">
       <div class="progress-stats">
         <div>
@@ -418,6 +420,16 @@
     </div>
   </div>
   <div class="generation-tabs" id="gen-tabs"></div>
+
+  <div id="firebase-hint" style="display:none; background:#1a1a10; border:1.5px solid var(--gold); border-radius:8px; padding:12px 16px; margin-top:10px; max-width:1600px; margin-left:auto; margin-right:auto;">
+    <b style="color:var(--gold)">⚙️ Firebase Konfiguration erforderlich für Sync</b><br>
+    <span style="color:var(--text-muted); font-size:13px;">
+      1. Geh zu <a href="https://console.firebase.google.com" target="_blank" style="color:#4fc3f7">console.firebase.google.com</a> → Neues Projekt<br>
+      2. "Realtime Database" erstellen → Testmodus → Region: europe-west1<br>
+      3. Projekteinstellungen → Deine Web-App → Config kopieren<br>
+      4. In der HTML-Datei <code style="background:#2a2a4a;padding:2px 6px;border-radius:4px">FIREBASE_CONFIG</code> mit deinen Werten ausfüllen
+    </span>
+  </div>
 </header>
 
 <div id="loading" class="loading-screen">
@@ -435,13 +447,28 @@ const germanNames = {
 };
 
 const TOTAL = 1025;
-const STORAGE_KEY = 'pokedex_caught_v1';
-const CACHE_KEY = 'pokedex_data_v1';
+
+// ============================================================
+// FIREBASE KONFIGURATION – hier deine Werte eintragen!
+// Anleitung steht im gelben Kasten auf der Seite
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC-0UlvgHMOsjLupETPiZDZQkMXNXcVOLQ",
+  authDomain: "pokedex-27d1f.firebaseapp.com",
+  databaseURL: "https://pokedex-27d1f-default-rtdb.firebaseio.com",
+  projectId: "pokedex-27d1f",
+  storageBucket: "pokedex-27d1f.firebasestorage.app",
+  messagingSenderId: "38826277",
+  appId: "1:38826277:web:02c1b2ad0eb9d9ea3a6acc",
+};
+const FIREBASE_PATH = "pokedex/caught";
+// ============================================================
 
 let allPokemon = [];
 let caught = new Set();
 let currentGen = 0;
-let filtered = [];
+let dbRef = null;
+let firebaseReady = false;
 
 const genRanges = [
   {label:"Alle", min:1, max:1025},
@@ -458,13 +485,65 @@ const genRanges = [
 
 function loadCaught() {
   try {
-    const d = localStorage.getItem(STORAGE_KEY);
+    const d = localStorage.getItem('pokedex_caught_v1');
     if (d) caught = new Set(JSON.parse(d));
   } catch(e) {}
 }
 
 function saveCaught() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...caught]));
+  localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
+  if (firebaseReady && dbRef) {
+    dbRef.set([...caught]).catch(e => console.error('Firebase save error:', e));
+  }
+}
+
+function updateSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (status === 'online') {
+    el.innerHTML = '🟢 Echtzeit-Sync aktiv';
+    el.style.color = '#4caf50';
+  } else if (status === 'error') {
+    el.innerHTML = '🔴 Nur lokal (kein Sync)';
+    el.style.color = '#e63946';
+  } else {
+    el.innerHTML = '⏳ Verbinde...';
+    el.style.color = 'var(--text-muted)';
+  }
+}
+
+function initFirebase() {
+  if (FIREBASE_CONFIG.apiKey === "DEIN_API_KEY") {
+    document.getElementById('firebase-hint').style.display = 'block';
+    updateSyncStatus('error');
+    return;
+  }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.database();
+    dbRef = db.ref(FIREBASE_PATH);
+
+    // Echtzeit-Listener: jede Änderung von allen Nutzern sofort sehen
+    dbRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data && Array.isArray(data)) {
+        caught = new Set(data);
+        localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
+        if (document.getElementById('grid').style.display !== 'none') {
+          renderGrid();
+          updateStats();
+        }
+      }
+      firebaseReady = true;
+      updateSyncStatus('online');
+    }, (err) => {
+      console.error('Firebase error:', err);
+      updateSyncStatus('error');
+    });
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    updateSyncStatus('error');
+  }
 }
 
 function updateStats() {
@@ -593,7 +672,7 @@ async function loadPokemonData() {
       displayNameEn: getPokemonEnName(id),
       types: typeData[id] || ['normal'],
       // Use sprites from a reliable source
-      sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
+      sprite: `https://unpkg.com/pokeapi-sprites@2.0.2/sprites/pokemon/other/dream-world/${id}.svg`
     });
   }
 
@@ -617,6 +696,7 @@ function showApp() {
 loadCaught();
 buildTabs();
 loadPokemonData();
+initFirebase();
 
 document.getElementById('search').addEventListener('input', renderGrid);
 document.getElementById('filter-caught').addEventListener('change', renderGrid);
@@ -624,3 +704,4 @@ document.getElementById('filter-type').addEventListener('change', renderGrid);
 </script>
 </body>
 </html>
+

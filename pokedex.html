@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokédex Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;900&display=swap');
+
+  :root {
+    --bg: #0d0d1a;
+    --card-bg: #16162a;
+    --card-hover: #1e1e38;
+    --accent: #e63946;
+    --gold: #ffd700;
+    --text: #e8e8f0;
+    --text-muted: #7878a0;
+    --border: #2a2a4a;
+    --caught-glow: rgba(255,215,0,0.15);
+    --normal: #A8A878; --fire: #F08030; --water: #6890F0;
+    --electric: #F8D030; --grass: #78C850; --ice: #98D8D8;
+    --fighting: #C03028; --poison: #A040A0; --ground: #E0C068;
+    --flying: #A890F0; --psychic: #F85888; --bug: #A8B820;
+    --rock: #B8A038; --ghost: #705898; --dragon: #7038F8;
+    --dark: #705848; --steel: #B8B8D0; --fairy: #EE99AC;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a0a2e 0%, #16162a 50%, #0d1a2e 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 30px rgba(230,57,70,0.3);
+  }
+
+  .header-inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,215,0,0.5), 2px 2px 0 var(--accent);
+    white-space: nowrap;
+    letter-spacing: 1px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .progress-section {
+    flex: 1;
+    min-width: 250px;
+  }
+
+  .progress-stats {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .stat-big {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 22px;
+    color: var(--gold);
+  }
+
+  .stat-label {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .progress-bar-wrap {
+    background: var(--border);
+    border-radius: 10px;
+    height: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(255,215,0,0.4);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  input[type="text"] {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--text-muted); }
+
+  select {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 8px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover { background: #ff4d5a; transform: translateY(-1px); }
+  .btn.secondary { background: var(--card-hover); border: 1.5px solid var(--border); }
+  .btn.secondary:hover { border-color: var(--accent); }
+
+  .generation-tabs {
+    max-width: 1600px;
+    margin: 16px auto 0;
+    padding: 0 16px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .gen-tab {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .gen-tab:hover, .gen-tab.active {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--card-hover);
+  }
+
+  .grid-container {
+    max-width: 1600px;
+    margin: 20px auto;
+    padding: 0 16px 60px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .poke-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 8px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    text-align: center;
+    user-select: none;
+  }
+
+  .poke-card:hover {
+    border-color: #4444aa;
+    background: var(--card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+
+  .poke-card.caught {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, var(--card-bg), #1a1a10);
+    box-shadow: 0 0 12px var(--caught-glow), inset 0 0 20px rgba(255,215,0,0.05);
+  }
+
+  .poke-card.caught:hover {
+    box-shadow: 0 6px 20px rgba(255,215,0,0.3), inset 0 0 20px rgba(255,215,0,0.08);
+  }
+
+  .caught-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .poke-card.caught .caught-badge { opacity: 1; }
+
+  .poke-num {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .poke-img {
+    width: 80px;
+    height: 80px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    transition: transform 0.2s;
+  }
+
+  .poke-card.caught .poke-img { filter: drop-shadow(0 0 6px rgba(255,215,0,0.4)); }
+  .poke-card:hover .poke-img { transform: scale(1.08); }
+
+  .poke-img.not-caught {
+    filter: brightness(0) opacity(0.3);
+  }
+
+  .poke-name-de {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--text);
+    margin-top: 4px;
+    line-height: 1.2;
+  }
+
+  .poke-name-en {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .type-badges {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+
+  .type-badge {
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 20px;
+  }
+
+  .loading-pokeball {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #e63946 50%, white 50%);
+    border: 3px solid #333;
+    position: relative;
+    animation: spin 1s linear infinite;
+  }
+
+  .loading-pokeball::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    border: 3px solid #333;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: var(--gold);
+    text-align: center;
+  }
+
+  .loading-progress {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .no-results {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 16px;
+  }
+
+  /* Type colors */
+  .t-normal { background: var(--normal); color: #333; }
+  .t-fire { background: var(--fire); color: white; }
+  .t-water { background: var(--water); color: white; }
+  .t-electric { background: var(--electric); color: #333; }
+  .t-grass { background: var(--grass); color: white; }
+  .t-ice { background: var(--ice); color: #333; }
+  .t-fighting { background: var(--fighting); color: white; }
+  .t-poison { background: var(--poison); color: white; }
+  .t-ground { background: var(--ground); color: #333; }
+  .t-flying { background: var(--flying); color: white; }
+  .t-psychic { background: var(--psychic); color: white; }
+  .t-bug { background: var(--bug); color: white; }
+  .t-rock { background: var(--rock); color: white; }
+  .t-ghost { background: var(--ghost); color: white; }
+  .t-dragon { background: var(--dragon); color: white; }
+  .t-dark { background: var(--dark); color: white; }
+  .t-steel { background: var(--steel); color: #333; }
+  .t-fairy { background: var(--fairy); color: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">Pokémon<span>DEX</span></div>
+    <div class="progress-section">
+      <div class="progress-stats">
+        <div>
+          <div class="stat-big" id="caught-count">0</div>
+          <div class="stat-label">gefangen</div>
+        </div>
+        <div>
+          <div class="stat-big" id="total-count">1025</div>
+          <div class="stat-label">gesamt</div>
+        </div>
+        <div>
+          <div class="stat-big" id="percent-count">0%</div>
+          <div class="stat-label">vollständig</div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <input type="text" id="search" placeholder="🔍 Suche Pokémon...">
+      <select id="filter-caught">
+        <option value="all">Alle anzeigen</option>
+        <option value="caught">Nur gefangen</option>
+        <option value="missing">Fehlende</option>
+      </select>
+      <select id="filter-type">
+        <option value="">Alle Typen</option>
+        <option value="normal">Normal</option>
+        <option value="fire">Feuer</option>
+        <option value="water">Wasser</option>
+        <option value="electric">Elektro</option>
+        <option value="grass">Pflanze</option>
+        <option value="ice">Eis</option>
+        <option value="fighting">Kampf</option>
+        <option value="poison">Gift</option>
+        <option value="ground">Boden</option>
+        <option value="flying">Flug</option>
+        <option value="psychic">Psycho</option>
+        <option value="bug">Käfer</option>
+        <option value="rock">Gestein</option>
+        <option value="ghost">Geist</option>
+        <option value="dragon">Drache</option>
+        <option value="dark">Unlicht</option>
+        <option value="steel">Stahl</option>
+        <option value="fairy">Fee</option>
+      </select>
+      <button class="btn secondary" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+  <div class="generation-tabs" id="gen-tabs"></div>
+</header>
+
+<div id="loading" class="loading-screen">
+  <div class="loading-pokeball"></div>
+  <div class="loading-text">Pokédex wird geladen...</div>
+  <div class="loading-progress" id="load-progress">Verbindung zur PokéAPI...</div>
+</div>
+
+<div class="grid-container" id="grid" style="display:none"></div>
+
+<script>
+// German Pokemon names mapping (all 1025)
+const germanNames = {
+  1:"Bisasam",2:"Bisaknosp",3:"Bisaflor",4:"Glumanda",5:"Glutexo",6:"Glurak",7:"Schiggy",8:"Schillok",9:"Turtok",10:"Raupy",11:"Safcon",12:"Smettbo",13:"Hornliu",14:"Kokuna",15:"Bibor",16:"Taubsi",17:"Tauboga",18:"Tauboss",19:"Rattfratz",20:"Rattikarl",21:"Habitak",22:"Ibitak",23:"Rettan",24:"Arbok",25:"Pikachu",26:"Raichu",27:"Sandan",28:"Sandamer",29:"Nidoran♀",30:"Nidorina",31:"Nidoqueen",32:"Nidoran♂",33:"Nidorino",34:"Nidoking",35:"Piepi",36:"Pixi",37:"Vulpix",38:"Vulnona",39:"Pummeluff",40:"Knuddeluff",41:"Zubat",42:"Golbat",43:"Myrapla",44:"Duflor",45:"Giflor",46:"Paras",47:"Parasek",48:"Bluzuk",49:"Omot",50:"Digda",51:"Digdri",52:"Mauzi",53:"Snobilikat",54:"Enton",55:"Entoron",56:"Menki",57:"Rasaff",58:"Fukano",59:"Arkani",60:"Quapsel",61:"Quaputzi",62:"Quappo",63:"Abra",64:"Kadabra",65:"Simsala",66:"Machollo",67:"Maschock",68:"Machomei",69:"Knofensa",70:"Ultrigaria",71:"Sarzenia",72:"Tentacha",73:"Tentoxa",74:"Kleinstein",75:"Georok",76:"Geowaz",77:"Ponita",78:"Gallopa",79:"Flegmon",80:"Lahmus",81:"Magnetilo",82:"Magneton",83:"Porenta",84:"Dodu",85:"Dodri",86:"Jurob",87:"Jugong",88:"Sleima",89:"Sleimok",90:"Muschas",91:"Austos",92:"Nebulak",93:"Alpollo",94:"Gengar",95:"Onix",96:"Traumato",97:"Hypno",98:"Krabby",99:"Kingler",100:"Voltobal",101:"Lektroball",102:"Owei",103:"Kokowei",104:"Tragosso",105:"Knogga",106:"Kicklee",107:"Nockchan",108:"Schlurp",109:"Smogon",110:"Smogmog",111:"Rihorn",112:"Rizeros",113:"Chaneira",114:"Tangela",115:"Kangama",116:"Seeper",117:"Seemon",118:"Goldini",119:"Golking",120:"Sterndu",121:"Starmie",122:"Pantimos",123:"Sichlor",124:"Rossana",125:"Elektek",126:"Magmar",127:"Pinsir",128:"Tauros",129:"Karpador",130:"Garados",131:"Lapras",132:"Ditto",133:"Evoli",134:"Aquana",135:"Blitza",136:"Flamara",137:"Porygon",138:"Amonitas",139:"Amoroso",140:"Kabuto",141:"Kabutops",142:"Aerodactyl",143:"Relaxo",144:"Arktos",145:"Zapdos",146:"Lavados",147:"Dratini",148:"Dragonir",149:"Dragoran",150:"Mewtu",151:"Mew",152:"Endivie",153:"Lorblatt",154:"Meganie",155:"Feurigel",156:"Igelavar",157:"Tornupto",158:"Karnimani",159:"Tyracroc",160:"Impergator",161:"Wiesor",162:"Wiesenior",163:"Hoothoot",164:"Noctuh",165:"Ledyba",166:"Ledian",167:"Spinarak",168:"Ariados",169:"Iksbat",170:"Lanturn",171:"Lanturn",172:"Pichu",173:"Pii",174:"Fluffeluff",175:"Togepi",176:"Togetic",177:"Natu",178:"Xatu",179:"Voltilamm",180:"Waaty",181:"Ampharos",182:"Blubberus",183:"Marill",184:"Azumarill",185:"Mogelbaum",186:"Quaxo",187:"Hoppspross",188:"Hubelupf",189:"Knospi",190:"Aipom",191:"Sonnkern",192:"Sonnflora",193:"Yanma",194:"Felino",195:"Morlord",196:"Psiana",197:"Nachtara",198:"Kramurx",199:"Lola",200:"Misdreavus",201:"Unown",202:"Woingenau",203:"Girafarig",204:"Pineco",205:"Forstellka",206:"Dunsparce",207:"Skorgla",208:"Stahlos",209:"Snubbull",210:"Granbull",211:"Corsola",212:"Scherox",213:"Leufeo",214:"Heracross",215:"Sneasel",216:"Teddiursa",217:"Ursaring",218:"Schneckmag",219:"Magcargo",220:"Quiekel",221:"Keifel",222:"Corasonn",223:"Remoraid",224:"Octillery",225:"Botogel",226:"Mantax",227:"Panzaeron",228:"Hunduster",229:"Hundemon",230:"Seedraking",231:"Phanpy",232:"Donphan",233:"Porygon2",234:"Damhirplex",235:"Farbeagle",236:"Rabauz",237:"Kapoera",238:"Kussilla",239:"Elekid",240:"Magby",241:"Miltank",242:"Heiteira",243:"Raikou",244:"Entei",245:"Suicune",246:"Larvitar",247:"Pupitar",248:"Despotar",249:"Lugia",250:"Ho-Oh",251:"Celebi",252:"Geckarbor",253:"Reptain",254:"Gewaldro",255:"Flemmli",256:"Jungglut",257:"Lohgock",258:"Hydropi",259:"Moorabbel",260:"Sumpex",261:"Poochyena",262:"Magnayen",263:"Zigzachs",264:"Geradaks",265:"Waumpel",266:"Schaloko",267:"Papinella",268:"Panekon",269:"Mottineva",270:"Loturzel",271:"Lotadel",272:"Lombrero",273:"Samurzel",274:"Nuzleaf",275:"Shiftry",276:"Schwalbini",277:"Schwalboss",278:"Wingull",279:"Pelipper",280:"Trasla",281:"Kirlia",282:"Guardevoir",283:"Waumboll",284:"Maskeregen",285:"Knilz",286:"Kapilz",287:"Bummelz",288:"Muntier",289:"Letarking",290:"Nincada",291:"Ninjask",292:"Schneppke",293:"Wailnuss",294:"Wailmer",295:"Wailord",296:"Makuhita",297:"Hariyama",298:"Azurill",299:"Nasgnet",300:"Fühlsam",301:"Eneco",302:"Zobiris",303:"Flunkifer",304:"Stollunior",305:"Stollrak",306:"Stolloss",307:"Meditie",308:"Meditalis",309:"Plusle",310:"Minun",311:"Plusle",312:"Minun",313:"Volbeat",314:"Illumise",315:"Roselia",316:"Schlukwech",317:"Schlukwech",318:"Kanivanha",319:"Tohaido",320:"Wailmer",321:"Wailord",322:"Camerupt",323:"Camerupt",324:"Torkoal",325:"Spoink",326:"Groink",327:"Spaltoberst",328:"Trapinch",329:"Vibrava",330:"Flügel",331:"Cacnea",332:"Cacturne",333:"Wablu",334:"Altaria",335:"Zangoose",336:"Seviper",337:"Lunastein",338:"Sonnfel",339:"Barschuft",340:"Welsar",341:"Krebscorps",342:"Krebshand",343:"Baltoy",344:"Lepumentas",345:"Liliep",346:"Wielie",347:"Anorith",348:"Armaldo",349:"Barschwa",350:"Milotic",351:"Castaforma",352:"Kecleon",353:"Shuppet",354:"Banette",355:"Zwirrlicht",356:"Banette",357:"Tropius",358:"Palimpalim",359:"Absol",360:"Wablu",361:"Snorunt",362:"Glalie",363:"Spheal",364:"Sealeo",365:"Walrein",366:"Perlu",367:"Huntail",368:"Gorebyss",369:"Relicanth",370:"Liebiskus",371:"Kindwurm",372:"Draschel",373:"Brutalanda",374:"Beldum",375:"Metang",376:"Metagross",377:"Regirock",378:"Regice",379:"Registeel",380:"Latias",381:"Latios",382:"Kyogre",383:"Groudon",384:"Rayquaza",385:"Jirachi",386:"Deoxys",387:"Chelast",388:"Chelcarain",389:"Chelterrar",390:"Panflam",391:"Panpyro",392:"Panferno",393:"Plinfa",394:"Pliprin",395:"Impoleon",396:"Staralili",397:"Staravia",398:"Staraptor",399:"Bidiza",400:"Bidifas",401:"Zirpurze",402:"Zirpeise",403:"Sheinux",404:"Luxio",405:"Luxtra",406:"Knospi",407:"Rosenkreis",408:"Koknodon",409:"Rameidon",410:"Schilterus",411:"Bollterus",412:"Burmy",413:"Wormadam",414:"Moterpel",415:"Combee",416:"Honweisel",417:"Pachirisu",418:"Bamelin",419:"Finbaltro",420:"Pampuli",421:"Charmian",422:"Molluskan",423:"Gastrodon",424:"Ambidiffel",425:"Driftlon",426:"Drifzepeli",427:"Haspiror",428:"Schlapor",429:"Mismagius",430:"Honchkrow",431:"Miauzi",432:"Miauz",433:"Klingplim",434:"Stinktier",435:"Morastox",436:"Bronzel",437:"Bronzong",438:"Bonsly",439:"Mime Jr.",440:"Wonneira",441:"Plaudagei",442:"Morbitesse",443:"Kaumalat",444:"Knarksel",445:"Garchomp",446:"Mampfaxo",447:"Riolu",448:"Lucario",449:"Hippopotas",450:"Hippoterus",451:"Skorupi",452:"Drapion",453:"Glibunkel",454:"Toxiquak",455:"Fletiamo",456:"Finneon",457:"Lumineon",458:"Mantirps",459:"Snover",460:"Voltolos",461:"Weavile",462:"Magnezone",463:"Togepi",464:"Rihornior",465:"Tangoloss",466:"Elevoltek",467:"Magbrant",468:"Togekiss",469:"Yanmega",470:"Leafeon",471:"Glaziola",472:"Skorgla",473:"Mamutel",474:"Porygon-Z",475:"Gallade",476:"Nasgnet",477:"Dusknoir",478:"Frosdedje",479:"Rotom",480:"Uxie",481:"Mesprit",482:"Azelf",483:"Dialga",484:"Palkia",485:"Heatran",486:"Regigigas",487:"Giratina",488:"Cresselia",489:"Phione",490:"Manaphy",491:"Darkrai",492:"Shaymin",493:"Arceus",494:"Victini",495:"Serpifeu",496:"Serpiroyal",497:"Serpiroyal",498:"Floink",499:"Ferkokel",500:"Flambirex",501:"Ottaro",502:"Zwottronin",503:"Admurai",504:"Nagelotz",505:"Nagelpin",506:"Velursi",507:"Griffel",508:"Griffel",509:"Nagelotz",510:"Liepard",511:"Paviat",512:"Simian",513:"Pansear",514:"Simisear",515:"Panwater",516:"Simipour",517:"Traumato",518:"Musharna",519:"Taubsi",520:"Tauboga",521:"Tauboss",522:"Zebstrika",523:"Zeburak",524:"Roggenrola",525:"Bradozon",526:"Gigadoron",527:"Woobat",528:"Swoobat",529:"Duflohm",530:"Duwelbis",531:"Audino",532:"Krokel",533:"Maschollo",534:"Maschock",535:"Tirtouga",536:"Carracosta",537:"Archen",538:"Archeops",539:"Traunfugil",540:"Trauerklos",541:"Knotfisch",542:"Snivy",543:"Servine",544:"Serperior",545:"Tepig",546:"Pignite",547:"Emboar",548:"Oshawott",549:"Dewott",550:"Samurott",551:"Patrat",552:"Watchog",553:"Lillipup",554:"Herdier",555:"Stoutland",556:"Purrloin",557:"Liepard",558:"Pansage",559:"Simisage",560:"Pansear",561:"Simisear",562:"Panpour",563:"Simipour",564:"Munna",565:"Musharna",566:"Pidove",567:"Tranquill",568:"Unfezant",569:"Blitzle",570:"Zebstrika",571:"Roggenrola",572:"Boldore",573:"Gigalith",574:"Woobat",575:"Swoobat",576:"Drilbur",577:"Excadrill",578:"Audino",579:"Timburr",580:"Gurdurr",581:"Conkeldurr",582:"Tympole",583:"Palpitoad",584:"Seismitoad",585:"Throh",586:"Sawk",587:"Sewaddle",588:"Swadloon",589:"Leavanny",590:"Venipede",591:"Whirlipede",592:"Scolipede",593:"Cottonee",594:"Whimsicott",595:"Petilil",596:"Lilligant",597:"Basculin",598:"Sandile",599:"Krokorok",600:"Krookodile",601:"Darumaka",602:"Darmanitan",603:"Maractus",604:"Dwebble",605:"Crustle",606:"Scraggy",607:"Scrafty",608:"Sigilyph",609:"Yamask",610:"Cofagrigus",611:"Tirtouga",612:"Carracosta",613:"Archen",614:"Archeops",615:"Trubbish",616:"Garbodor",617:"Zorua",618:"Zoroark",619:"Minccino",620:"Cinccino",621:"Gothita",622:"Gothorita",623:"Gothitelle",624:"Solosis",625:"Duosion",626:"Reuniclus",627:"Ducklett",628:"Swanna",629:"Vanillite",630:"Vanillish",631:"Vanilluxe",632:"Deerling",633:"Sawsbuck",634:"Emolga",635:"Karrablast",636:"Escavalier",637:"Foongus",638:"Amoonguss",639:"Frillish",640:"Jellicent",641:"Alomomola",642:"Joltik",643:"Galvantula",644:"Ferroseed",645:"Ferrothorn",646:"Klink",647:"Klang",648:"Klinklang",649:"Tynamo",650:"Eelektrik",651:"Eelektross",652:"Elgyem",653:"Beheeyem",654:"Litwick",655:"Lampent",656:"Chandelure",657:"Axew",658:"Fraxure",659:"Haxorus",660:"Cubchoo",661:"Beartic",662:"Cryogonal",663:"Shelmet",664:"Accelgor",665:"Stunfisk",666:"Mienfoo",667:"Mienshao",668:"Druddigon",669:"Golett",670:"Golurk",671:"Pawniard",672:"Bisharp",673:"Bouffalant",674:"Rufflet",675:"Braviary",676:"Vullaby",677:"Mandibuzz",678:"Heatmor",679:"Durant",680:"Deino",681:"Zweilous",682:"Hydreigon",683:"Larvesta",684:"Volcarona",685:"Cobalion",686:"Terrakion",687:"Virizion",688:"Tornadus",689:"Thundurus",690:"Reshiram",691:"Zekrom",692:"Landorus",693:"Kyurem",694:"Keldeo",695:"Meloetta",696:"Genesect",697:"Chespin",698:"Quilladin",699:"Chesnaught",700:"Fennekin",701:"Braixen",702:"Delphox",703:"Froakie",704:"Frogadier",705:"Greninja",706:"Bunnelby",707:"Diggersby",708:"Fletchling",709:"Fletchinder",710:"Talonflame",711:"Scatterbug",712:"Spewpa",713:"Vivillon",714:"Litleo",715:"Pyroar",716:"Flabébé",717:"Floette",718:"Florges",719:"Skiddo",720:"Gogoat",721:"Pancham",722:"Pangoro",723:"Furfrou",724:"Espurr",725:"Meowstic",726:"Honedge",727:"Doublade",728:"Aegislash",729:"Spritzee",730:"Aromatisse",731:"Swirlix",732:"Slurpuff",733:"Inkay",734:"Malamar",735:"Binacle",736:"Barbaracle",737:"Skrelp",738:"Dragalge",739:"Clauncher",740:"Clawitzer",741:"Helioptile",742:"Heliolisk",743:"Tyrunt",744:"Tyrantrum",745:"Amaura",746:"Aurorus",747:"Sylveon",748:"Hawlucha",749:"Dedenne",750:"Carbink",751:"Goomy",752:"Sliggoo",753:"Goodra",754:"Klefki",755:"Phantump",756:"Trevenant",757:"Pumpkaboo",758:"Gourgeist",759:"Bergmite",760:"Avalugg",761:"Noibat",762:"Noivern",763:"Xerneas",764:"Yveltal",765:"Zygarde",766:"Diancie",767:"Hoopa",768:"Volcanion",769:"Rowlet",770:"Dartrix",771:"Decidueye",772:"Litten",773:"Torracat",774:"Incineroar",775:"Popplio",776:"Brionne",777:"Primarina",778:"Pikipek",779:"Trumbeak",780:"Toucannon",781:"Yungoos",782:"Gumshoos",783:"Grubbin",784:"Charjabug",785:"Vikavolt",786:"Crabrawler",787:"Crabominable",788:"Oricorio",789:"Cutiefly",790:"Ribombee",791:"Rockruff",792:"Lycanroc",793:"Wishiwashi",794:"Mareanie",795:"Toxapex",796:"Mudbray",797:"Mudsdale",798:"Dewpider",799:"Araquanid",800:"Fomantis",801:"Lurantis",802:"Morelull",803:"Shiinotic",804:"Salandit",805:"Salazzle",806:"Stufful",807:"Bewear",808:"Bounsweet",809:"Steenee",810:"Tsareena",811:"Comfey",812:"Oranguru",813:"Passimian",814:"Wimpod",815:"Golisopod",816:"Sandygast",817:"Palossand",818:"Pyukumuku",819:"Type: Null",820:"Silvally",821:"Minior",822:"Komala",823:"Turtonator",824:"Togedemaru",825:"Mimikyu",826:"Bruxish",827:"Drampa",828:"Dhelmise",829:"Jangmo-o",830:"Hakamo-o",831:"Kommo-o",832:"Tapu Koko",833:"Tapu Lele",834:"Tapu Bulu",835:"Tapu Fini",836:"Cosmog",837:"Cosmoem",838:"Solgaleo",839:"Lunala",840:"Nihilego",841:"Buzzwole",842:"Pheromosa",843:"Xurkitree",844:"Celesteela",845:"Kartana",846:"Guzzlord",847:"Necrozma",848:"Magearna",849:"Marshadow",850:"Poipole",851:"Naganadel",852:"Stakataka",853:"Blacephalon",854:"Zeraora",855:"Meltan",856:"Melmetal",857:"Grookey",858:"Thwackey",859:"Rillaboom",860:"Scorbunny",861:"Raboot",862:"Cinderace",863:"Sobble",864:"Drizzile",865:"Inteleon",866:"Skwovet",867:"Greedent",868:"Rookidee",869:"Corvisquire",870:"Corviknight",871:"Blipbug",872:"Dottler",873:"Orbeetle",874:"Nickit",875:"Thievul",876:"Gossifleur",877:"Eldegoss",878:"Wooloo",879:"Dubwool",880:"Chewtle",881:"Drednaw",882:"Yamper",883:"Boltund",884:"Rolycoly",885:"Carkol",886:"Coalossal",887:"Applin",888:"Flapple",889:"Appletun",890:"Silicobra",891:"Sandaconda",892:"Cramorant",893:"Arrokuda",894:"Barraskewda",895:"Toxel",896:"Toxtricity",897:"Sizzlipede",898:"Centiskorch",899:"Clobbopus",900:"Grapploct",901:"Sinistea",902:"Polteageist",903:"Hatenna",904:"Hattrem",905:"Hatterene",906:"Impidimp",907:"Morgrem",908:"Grimmsnarl",909:"Obstagoon",910:"Perrserker",911:"Cursola",912:"Sirfetch'd",913:"Mr. Rime",914:"Runerigus",915:"Milcery",916:"Alcremie",917:"Falinks",918:"Pincurchin",919:"Snom",920:"Frosmoth",921:"Stonjourner",922:"Eiscue",923:"Indeedee",924:"Morpeko",925:"Cufant",926:"Copperajah",927:"Dracozolt",928:"Arctozolt",929:"Dracovish",930:"Arctovish",931:"Duraludon",932:"Dreepy",933:"Drakloak",934:"Dragapult",935:"Zacian",936:"Zamazenta",937:"Eternatus",938:"Kubfu",939:"Urshifu",940:"Zarude",941:"Regieleki",942:"Regidrago",943:"Glastrier",944:"Spectrier",945:"Calyrex",946:"Wyrdeer",947:"Kleavor",948:"Ursaluna",949:"Basculegion",950:"Sneasler",951:"Overqwil",952:"Enamorus",953:"Sprigatito",954:"Floragato",955:"Meowscarada",956:"Fuecoco",957:"Crocalor",958:"Skeledirge",959:"Quaxly",960:"Quaxwell",961:"Quaquaval",962:"Lechonk",963:"Oinkologne",964:"Tarountula",965:"Spidops",966:"Nymble",967:"Lokix",968:"Pawmi",969:"Pawmo",970:"Pawmot",971:"Tandemaus",972:"Maushold",973:"Fidough",974:"Dachsbun",975:"Smoliv",976:"Dolliv",977:"Arboliva",978:"Squawkabilly",979:"Nacli",980:"Naclstack",981:"Garganacl",982:"Charcadet",983:"Armarouge",984:"Ceruledge",985:"Tadbulb",986:"Bellibolt",987:"Wattrel",988:"Kilowattrel",989:"Maschiff",990:"Mabosstiff",991:"Shroodle",992:"Grafaiai",993:"Bramblin",994:"Brambleghast",995:"Toedscool",996:"Toedscruel",997:"Klawf",998:"Capsakid",999:"Scovillain",1000:"Rellor",1001:"Rabsca",1002:"Flittle",1003:"Espathra",1004:"Tinkatink",1005:"Tinkatuff",1006:"Tinkaton",1007:"Wiglett",1008:"Wugtrio",1009:"Bombirdier",1010:"Finizen",1011:"Palafin",1012:"Varoom",1013:"Revavroom",1014:"Cyclizar",1015:"Orthworm",1016:"Glimmet",1017:"Glimmora",1018:"Greavard",1019:"Houndstone",1020:"Flamigo",1021:"Cetoddle",1022:"Cetitan",1023:"Veluza",1024:"Dondozo",1025:"Tatsugiri"
+};
+
+const TOTAL = 1025;
+const STORAGE_KEY = 'pokedex_caught_v1';
+const CACHE_KEY = 'pokedex_data_v1';
+
+let allPokemon = [];
+let caught = new Set();
+let currentGen = 0;
+let filtered = [];
+
+const genRanges = [
+  {label:"Alle", min:1, max:1025},
+  {label:"Gen I", min:1, max:151},
+  {label:"Gen II", min:152, max:251},
+  {label:"Gen III", min:252, max:386},
+  {label:"Gen IV", min:387, max:493},
+  {label:"Gen V", min:494, max:649},
+  {label:"Gen VI", min:650, max:721},
+  {label:"Gen VII", min:722, max:809},
+  {label:"Gen VIII", min:810, max:905},
+  {label:"Gen IX", min:906, max:1025}
+];
+
+function loadCaught() {
+  try {
+    const d = localStorage.getItem(STORAGE_KEY);
+    if (d) caught = new Set(JSON.parse(d));
+  } catch(e) {}
+}
+
+function saveCaught() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...caught]));
+}
+
+function updateStats() {
+  const n = caught.size;
+  const pct = ((n / TOTAL) * 100).toFixed(1);
+  document.getElementById('caught-count').textContent = n;
+  document.getElementById('percent-count').textContent = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function resetAll() {
+  if (!confirm('Wirklich alle Pokémon zurücksetzen?')) return;
+  caught.clear();
+  saveCaught();
+  renderGrid();
+  updateStats();
+}
+
+function buildTabs() {
+  const container = document.getElementById('gen-tabs');
+  genRanges.forEach((g, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'gen-tab' + (i === 0 ? ' active' : '');
+    tab.textContent = g.label;
+    tab.onclick = () => {
+      document.querySelectorAll('.gen-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentGen = i;
+      renderGrid();
+    };
+    container.appendChild(tab);
+  });
+}
+
+function getTypeClass(type) {
+  return 't-' + type;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const search = document.getElementById('search').value.toLowerCase().trim();
+  const filterCaught = document.getElementById('filter-caught').value;
+  const filterType = document.getElementById('filter-type').value;
+  const gen = genRanges[currentGen];
+
+  let data = allPokemon.filter(p => {
+    const num = p.id;
+    if (num < gen.min || num > gen.max) return false;
+    if (search) {
+      const deName = (germanNames[num] || '').toLowerCase();
+      const enName = (p.displayNameEn || p.name || '').toLowerCase();
+      const numStr = String(num).padStart(4, '0');
+      if (!deName.includes(search) && !enName.includes(search) && !numStr.includes(search)) return false;
+    }
+    if (filterCaught === 'caught' && !caught.has(num)) return false;
+    if (filterCaught === 'missing' && caught.has(num)) return false;
+    if (filterType && !p.types.includes(filterType)) return false;
+    return true;
+  });
+
+  grid.innerHTML = '';
+
+  if (data.length === 0) {
+    grid.innerHTML = '<div class="no-results">Kein Pokémon gefunden 😢</div>';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  data.forEach(p => {
+    const isCaught = caught.has(p.id);
+    const card = document.createElement('div');
+    card.className = 'poke-card' + (isCaught ? ' caught' : '');
+    card.onclick = () => toggleCaught(p.id, card);
+
+    const typeBadges = p.types.map(t => `<span class="type-badge ${getTypeClass(t)}">${t}</span>`).join('');
+
+    card.innerHTML = `
+      <div class="caught-badge">✨</div>
+      <div class="poke-num">#${String(p.id).padStart(4,'0')}</div>
+      <img class="poke-img ${isCaught ? '' : 'not-caught'}"
+           src="${p.sprite}"
+           alt="${p.name}"
+           loading="lazy"
+           onerror="this.src='https://placehold.co/80x80/16162a/7878a0?text=?'">
+      <div class="poke-name-de">${germanNames[p.id] || p.name}</div>
+      <div class="poke-name-en">${p.displayNameEn || p.name}</div>
+      <div class="type-badges">${typeBadges}</div>
+    `;
+    fragment.appendChild(card);
+  });
+  grid.appendChild(fragment);
+}
+
+function toggleCaught(id, card) {
+  if (caught.has(id)) {
+    caught.delete(id);
+    card.classList.remove('caught');
+    card.querySelector('.poke-img').classList.add('not-caught');
+  } else {
+    caught.add(id);
+    card.classList.add('caught');
+    card.querySelector('.poke-img').classList.remove('not-caught');
+    // Pop animation
+    card.style.transform = 'scale(1.1)';
+    setTimeout(() => card.style.transform = '', 200);
+  }
+  saveCaught();
+  updateStats();
+}
+
+// Type data per Pokemon (gen1-9 approximate, using pokeapi data baked in)
+const typeData = {
+  1:["grass","poison"],2:["grass","poison"],3:["grass","poison"],4:["fire"],5:["fire"],6:["fire","flying"],7:["water"],8:["water"],9:["water"],10:["bug"],11:["bug"],12:["bug","flying"],13:["bug","poison"],14:["bug","poison"],15:["bug","poison"],16:["normal","flying"],17:["normal","flying"],18:["normal","flying"],19:["normal"],20:["normal"],21:["normal","flying"],22:["normal","flying"],23:["poison"],24:["poison"],25:["electric"],26:["electric"],27:["ground"],28:["ground"],29:["poison"],30:["poison"],31:["poison","ground"],32:["poison"],33:["poison"],34:["poison","ground"],35:["normal","fairy"],36:["normal","fairy"],37:["fire"],38:["fire"],39:["normal","fairy"],40:["normal","fairy"],41:["poison","flying"],42:["poison","flying"],43:["grass","poison"],44:["grass","poison"],45:["grass","poison"],46:["bug","grass"],47:["bug","grass"],48:["bug","poison"],49:["bug","poison"],50:["ground"],51:["ground"],52:["normal"],53:["normal"],54:["water"],55:["water"],56:["fighting"],57:["fighting"],58:["fire"],59:["fire"],60:["water"],61:["water"],62:["water","fighting"],63:["psychic"],64:["psychic"],65:["psychic"],66:["fighting"],67:["fighting"],68:["fighting"],69:["grass","poison"],70:["grass","poison"],71:["grass","poison"],72:["water","poison"],73:["water","poison"],74:["rock","ground"],75:["rock","ground"],76:["rock","ground"],77:["fire"],78:["fire"],79:["water","psychic"],80:["water","psychic"],81:["electric","steel"],82:["electric","steel"],83:["normal","flying"],84:["normal","flying"],85:["normal","flying"],86:["water","ice"],87:["water","ice"],88:["poison"],89:["poison"],90:["water"],91:["water","ice"],92:["ghost","poison"],93:["ghost","poison"],94:["ghost","poison"],95:["rock","ground"],96:["psychic"],97:["psychic"],98:["water"],99:["water"],100:["electric"],101:["electric"],102:["grass","psychic"],103:["grass","psychic"],104:["ground"],105:["ground"],106:["fighting"],107:["fighting"],108:["normal"],109:["poison"],110:["poison"],111:["ground","rock"],112:["ground","rock"],113:["normal"],114:["grass"],115:["normal"],116:["water"],117:["water"],118:["water"],119:["water"],120:["water"],121:["water","psychic"],122:["psychic","fairy"],123:["bug","flying"],124:["ice","psychic"],125:["electric"],126:["fire"],127:["bug"],128:["normal"],129:["water"],130:["water","flying"],131:["water","ice"],132:["normal"],133:["normal"],134:["water"],135:["electric"],136:["fire"],137:["normal"],138:["rock","water"],139:["rock","water"],140:["rock","water"],141:["rock","water"],142:["rock","flying"],143:["normal"],144:["ice","flying"],145:["electric","flying"],146:["fire","flying"],147:["dragon"],148:["dragon"],149:["dragon","flying"],150:["psychic"],151:["psychic"],152:["grass"],153:["grass"],154:["grass"],155:["fire"],156:["fire"],157:["fire"],158:["water"],159:["water"],160:["water"],161:["normal"],162:["normal"],163:["normal","flying"],164:["normal","flying"],165:["bug","flying"],166:["bug","flying"],167:["bug","poison"],168:["bug","poison"],169:["poison","flying"],170:["water","electric"],171:["water","electric"],172:["electric"],173:["normal","fairy"],174:["normal","fairy"],175:["normal","fairy"],176:["normal","fairy"],177:["psychic","flying"],178:["psychic","flying"],179:["electric"],180:["electric"],181:["electric"],182:["grass","fairy"],183:["water","fairy"],184:["water","fairy"],185:["rock"],186:["water"],187:["grass","flying"],188:["grass","flying"],189:["grass","flying"],190:["normal"],191:["grass"],192:["grass"],193:["bug","flying"],194:["water","ground"],195:["water","ground"],196:["psychic"],197:["dark"],198:["dark","flying"],199:["water","psychic"],200:["ghost"],201:["psychic"],202:["psychic"],203:["normal","psychic"],204:["bug","steel"],205:["bug","steel"],206:["normal"],207:["ground","flying"],208:["steel","ground"],209:["fairy"],210:["fairy"],211:["water","poison"],212:["bug","steel"],213:["bug","rock"],214:["bug","fighting"],215:["dark","ice"],216:["normal"],217:["normal"],218:["fire"],219:["fire","rock"],220:["ice","ground"],221:["ice","ground"],222:["water","rock"],223:["water"],224:["water"],225:["ice","flying"],226:["water","flying"],227:["steel","flying"],228:["dark","fire"],229:["dark","fire"],230:["water","dragon"],231:["ground"],232:["ground"],233:["normal"],234:["normal","psychic"],235:["normal"],236:["fighting"],237:["fighting"],238:["ice","psychic"],239:["electric"],240:["fire"],241:["normal"],242:["normal","fairy"],243:["electric"],244:["fire"],245:["water"],246:["rock","ground"],247:["rock","ground"],248:["rock","dark"],249:["psychic","flying"],250:["fire","flying"],251:["psychic","grass"],252:["grass"],253:["grass"],254:["grass"],255:["fire"],256:["fire","fighting"],257:["fire","fighting"],258:["water"],259:["water","ground"],260:["water","ground"],261:["dark"],262:["dark"],263:["normal"],264:["normal"],265:["bug"],266:["bug"],267:["bug","flying"],268:["bug"],269:["bug","poison"],270:["water","grass"],271:["water","grass"],272:["water","grass"],273:["grass"],274:["grass","dark"],275:["grass","dark"],276:["normal","flying"],277:["normal","flying"],278:["water","flying"],279:["water","flying"],280:["psychic","fairy"],281:["psychic","fairy"],282:["psychic","fairy"],283:["water","bug"],284:["water","bug"],285:["grass"],286:["grass","fighting"],287:["normal"],288:["normal"],289:["normal"],290:["bug","ground"],291:["bug","flying"],292:["bug","ghost"],293:["normal"],294:["normal"],295:["water"],296:["fighting"],297:["fighting"],298:["normal","fairy"],299:["rock"],300:["normal","fairy"],301:["normal","fairy"],302:["dark","ghost"],303:["steel","fairy"],304:["steel","rock"],305:["steel","rock"],306:["steel","rock"],307:["fighting","psychic"],308:["fighting","psychic"],309:["electric"],310:["electric"],311:["electric"],312:["electric"],313:["bug"],314:["bug"],315:["grass","poison"],316:["poison"],317:["poison"],318:["water","dark"],319:["water","dark"],320:["water"],321:["water"],322:["fire","ground"],323:["fire","ground"],324:["fire"],325:["psychic"],326:["psychic"],327:["normal"],328:["ground"],329:["ground","dragon"],330:["ground","dragon"],331:["grass"],332:["grass","dark"],333:["normal","flying"],334:["dragon","flying"],335:["normal"],336:["poison"],337:["rock","psychic"],338:["rock","psychic"],339:["water","ground"],340:["water","ground"],341:["water"],342:["water","dark"],343:["ground","psychic"],344:["ground","psychic"],345:["rock","grass"],346:["rock","grass"],347:["rock","bug"],348:["rock","bug"],349:["water"],350:["water"],351:["water"],352:["normal"],353:["ghost"],354:["ghost"],355:["ghost"],356:["ghost"],357:["grass","flying"],358:["psychic","fairy"],359:["dark"],360:["psychic"],361:["ice"],362:["ice"],363:["ice","water"],364:["ice","water"],365:["ice","water"],366:["water"],367:["water"],368:["water"],369:["water","rock"],370:["water"],371:["dragon"],372:["dragon"],373:["dragon","flying"],374:["steel","psychic"],375:["steel","psychic"],376:["steel","psychic"],377:["rock"],378:["ice"],379:["steel"],380:["dragon","psychic"],381:["dragon","psychic"],382:["water"],383:["ground"],384:["dragon","flying"],385:["steel","psychic"],386:["psychic"],387:["grass"],388:["grass"],389:["grass","ground"],390:["fire"],391:["fire","fighting"],392:["fire","fighting"],393:["water"],394:["water"],395:["water","steel"],396:["normal","flying"],397:["normal","flying"],398:["normal","flying"],399:["normal"],400:["normal","water"],401:["bug"],402:["bug","fighting"],403:["electric"],404:["electric"],405:["electric"],406:["grass","poison"],407:["grass","poison"],408:["rock"],409:["rock"],410:["rock","steel"],411:["rock","steel"],412:["bug"],413:["bug","grass"],414:["bug","flying"],415:["bug","flying"],416:["bug","flying"],417:["electric"],418:["water"],419:["water"],420:["grass"],421:["grass","fairy"],422:["water"],423:["water","ground"],424:["normal"],425:["ghost","flying"],426:["ghost","flying"],427:["normal"],428:["normal"],429:["ghost"],430:["dark","flying"],431:["normal"],432:["normal"],433:["psychic","fairy"],434:["poison","dark"],435:["poison","dark"],436:["steel","psychic"],437:["steel","psychic"],438:["rock"],439:["psychic","fairy"],440:["normal","fairy"],441:["normal","flying"],442:["ghost"],443:["dragon"],444:["dragon","ground"],445:["dragon","ground"],446:["normal"],447:["fighting"],448:["fighting","steel"],449:["ground"],450:["ground"],451:["poison","bug"],452:["poison","dark"],453:["poison","fighting"],454:["poison","fighting"],455:["grass"],456:["water"],457:["water"],458:["water","flying"],459:["grass","ice"],460:["grass","ice"],461:["dark","ice"],462:["electric","steel"],463:["normal"],464:["ground","rock"],465:["grass"],466:["electric"],467:["fire"],468:["normal","flying"],469:["bug","flying"],470:["grass"],471:["ice"],472:["ground","flying"],473:["ice","ground"],474:["normal"],475:["psychic","fighting"],476:["rock","steel"],477:["ghost"],478:["ice","ghost"],479:["electric","ghost"],480:["psychic"],481:["psychic"],482:["psychic"],483:["steel","dragon"],484:["water","dragon"],485:["fire","steel"],486:["normal"],487:["ghost","dragon"],488:["psychic"],489:["water"],490:["water"],491:["dark"],492:["grass"],493:["normal"],494:["psychic","fire"],495:["grass"],496:["grass"],497:["grass"],498:["fire"],499:["fire"],500:["fire"],501:["water"],502:["water"],503:["water"],504:["normal"],505:["normal"],506:["normal"],507:["normal"],508:["normal"],509:["dark"],510:["dark"],511:["grass"],512:["grass"],513:["fire"],514:["fire"],515:["water"],516:["water"],517:["psychic"],518:["psychic"],519:["normal","flying"],520:["normal","flying"],521:["normal","flying"],522:["electric"],523:["electric"],524:["rock"],525:["rock"],526:["rock"],527:["psychic","flying"],528:["psychic","flying"],529:["ground","steel"],530:["ground","steel"],531:["normal","fairy"],532:["fighting"],533:["fighting"],534:["fighting"],535:["water"],536:["water","ground"],537:["water","ground"],538:["bug"],539:["bug"],540:["bug"],541:["bug","grass"],542:["bug","grass"],543:["bug","flying"],544:["bug","poison"],545:["bug","steel"],546:["grass","fairy"],547:["grass","fairy"],548:["grass","poison"],549:["grass","poison"],550:["water"],551:["normal"],552:["normal"],553:["normal"],554:["fire"],555:["fire"],556:["grass"],557:["rock","bug"],558:["rock","bug"],559:["dark","fighting"],560:["dark","fighting"],561:["psychic","flying"],562:["ghost"],563:["ghost","ice"],564:["water","rock"],565:["water","rock"],566:["rock","flying"],567:["rock","flying"],568:["poison"],569:["poison"],570:["dark","ice"],571:["dark","ice"],572:["normal"],573:["normal"],574:["psychic","fairy"],575:["psychic","fairy"],576:["psychic","fairy"],577:["psychic"],578:["psychic"],579:["psychic"],580:["water"],581:["water","flying"],582:["ice"],583:["ice","water"],584:["ice","water"],585:["normal","fighting"],586:["normal","fighting"],587:["bug","electric"],588:["bug"],589:["bug","grass"],590:["bug","poison"],591:["bug","poison"],592:["water","ghost"],593:["water","ghost"],594:["water","fairy"],595:["bug","electric"],596:["bug","electric"],597:["grass","steel"],598:["grass","steel"],599:["ground","dark"],600:["ground","dark"],601:["ground","dark"],602:["fire"],603:["fire"],604:["grass"],605:["rock","bug"],606:["rock","bug"],607:["dark","fighting"],608:["dark","fighting"],609:["psychic","flying"],610:["ghost"],611:["ghost"],612:["dragon"],613:["dragon"],614:["rock","dragon"],615:["poison"],616:["poison"],617:["dark"],618:["dark"],619:["normal"],620:["normal"],621:["psychic","fairy"],622:["psychic","fairy"],623:["psychic","fairy"],624:["psychic"],625:["psychic"],626:["psychic"],627:["water","flying"],628:["water","flying"],629:["ice"],630:["ice"],631:["ice","ice"],632:["normal","grass"],633:["normal","grass"],634:["electric"],635:["bug"],636:["bug","steel"],637:["grass","poison"],638:["grass","poison"],639:["water","ghost"],640:["water","ghost"],641:["water","fairy"],642:["bug","electric"],643:["bug","electric"],644:["grass","steel"],645:["grass","steel"],646:["steel"],647:["steel"],648:["steel"],649:["electric"],650:["electric"],651:["electric"],652:["psychic"],653:["psychic"],654:["ghost","fire"],655:["ghost","fire"],656:["ghost","fire"],657:["dragon"],658:["dragon"],659:["dragon"],660:["ice"],661:["ice"],662:["ice"],663:["bug","water"],664:["bug"],665:["ground","electric"],666:["fighting"],667:["fighting"],668:["dragon"],669:["ground","ghost"],670:["ground","ghost"],671:["dark","steel"],672:["dark","steel"],673:["normal"],674:["normal","flying"],675:["normal","flying"],676:["dark","flying"],677:["dark","flying"],678:["fire"],679:["bug","steel"],680:["dark","dragon"],681:["dark","dragon"],682:["dark","dragon"],683:["fire","bug"],684:["fire","bug"],685:["fighting","steel"],686:["rock","fighting"],687:["grass","fighting"],688:["flying","fighting"],689:["electric","flying"],690:["dragon","fire"],691:["dragon","electric"],692:["ground","flying"],693:["dragon","ice"],694:["water","fighting"],695:["normal","psychic"],696:["bug","steel"],697:["grass"],698:["grass","fighting"],699:["grass","fighting"],700:["fire"],701:["fire","psychic"],702:["fire","psychic"],703:["water"],704:["water"],705:["water","dark"],706:["normal"],707:["normal","ground"],708:["normal","flying"],709:["fire","flying"],710:["fire","flying"],711:["bug"],712:["bug"],713:["bug"],714:["fire","normal"],715:["fire","normal"],716:["fairy"],717:["fairy"],718:["fairy"],719:["grass"],720:["grass"],721:["fighting","dark"],722:["fighting","dark"],723:["normal"],724:["normal","psychic"],725:["psychic"],726:["steel","ghost"],727:["steel","ghost"],728:["steel","ghost"],729:["fairy"],730:["fairy"],731:["normal","fairy"],732:["normal","fairy"],733:["dark","psychic"],734:["dark","psychic"],735:["rock","water"],736:["rock","water"],737:["poison","water"],738:["poison","dragon"],739:["water"],740:["water"],741:["electric","normal"],742:["electric","dragon"],743:["rock"],744:["rock","dragon"],745:["rock","ice"],746:["rock","ice"],747:["fairy"],748:["fighting","flying"],749:["electric","fairy"],750:["rock","fairy"],751:["dragon"],752:["dragon"],753:["dragon","water"],754:["steel","fairy"],755:["ghost","grass"],756:["ghost","grass"],757:["ghost","grass"],758:["ghost","grass"],759:["ice"],760:["ice"],761:["dragon","flying"],762:["dragon","flying"],763:["fairy"],764:["dark","flying"],765:["dragon"],766:["rock","fairy"],767:["psychic","ghost"],768:["fire","water"],769:["grass","flying"],770:["grass","flying"],771:["grass","ghost"],772:["fire"],773:["fire"],774:["fire","dark"],775:["water","fairy"],776:["water","fairy"],777:["water","fairy"],778:["normal","flying"],779:["normal","flying"],780:["normal","flying"],781:["normal"],782:["normal"],783:["bug","electric"],784:["bug","electric"],785:["bug","electric"],786:["fighting","ice"],787:["fighting","ice"],788:["normal","flying"],789:["bug","fairy"],790:["bug","fairy"],791:["rock"],792:["rock"],793:["water"],794:["water","poison"],795:["water","poison"],796:["ground"],797:["ground"],798:["water","bug"],799:["water","bug"],800:["grass"],801:["grass"],802:["grass","fairy"],803:["grass","fairy"],804:["fire","poison"],805:["fire","poison"],806:["normal","fighting"],807:["normal","fighting"],808:["grass","fairy"],809:["grass","fairy"],810:["grass","fairy"],811:["fairy"],812:["normal","psychic"],813:["fighting"],814:["bug","water"],815:["bug","water"],816:["ghost","ground"],817:["ghost","ground"],818:["water"],819:["normal"],820:["normal"],821:["rock","flying"],822:["normal","flying"],823:["steel","flying"],824:["bug","electric"],825:["ghost","fairy"],826:["water","psychic"],827:["normal","flying"],828:["ghost","grass"],829:["dragon"],830:["dragon","fighting"],831:["dragon","fighting"],832:["electric","fairy"],833:["psychic","fairy"],834:["grass","fairy"],835:["water","fairy"],836:["psychic"],837:["psychic"],838:["psychic","steel"],839:["psychic","ghost"],840:["rock","poison"],841:["bug","fighting"],842:["bug"],843:["electric"],844:["steel","flying"],845:["grass","steel"],846:["dark","dragon"],847:["psychic"],848:["steel","fairy"],849:["fighting","ghost"],850:["poison","dragon"],851:["poison","dragon"],852:["rock","steel"],853:["fire","ghost"],854:["electric"],855:["steel"],856:["steel"],857:["grass"],858:["grass"],859:["grass"],860:["fire"],861:["fire"],862:["fire"],863:["water"],864:["water"],865:["water"],866:["normal"],867:["normal"],868:["normal","flying"],869:["normal","flying"],870:["steel","flying"],871:["bug"],872:["bug","psychic"],873:["bug","psychic"],874:["dark"],875:["dark"],876:["grass","fairy"],877:["grass","fairy"],878:["normal"],879:["normal"],880:["water"],881:["water","rock"],882:["electric"],883:["electric"],884:["rock","fire"],885:["rock","fire"],886:["rock","fire"],887:["grass","dragon"],888:["grass","dragon"],889:["grass","dragon"],890:["ground"],891:["ground"],892:["normal","flying"],893:["water"],894:["water"],895:["poison","electric"],896:["poison","electric"],897:["fire","bug"],898:["fire","bug"],899:["fighting","water"],900:["fighting","water"],901:["ghost"],902:["ghost"],903:["psychic","fairy"],904:["psychic","fairy"],905:["psychic","fairy"],906:["dark","fairy"],907:["dark","fairy"],908:["dark","fairy"],909:["dark","normal"],910:["steel"],911:["water","ghost"],912:["fighting","flying"],913:["ice","psychic"],914:["ground","ghost"],915:["fairy"],916:["fairy"],917:["fighting"],918:["electric"],919:["ice","bug"],920:["ice","bug"],921:["rock"],922:["ice"],923:["psychic","normal"],924:["electric","dark"],925:["steel"],926:["steel"],927:["electric","dragon"],928:["electric","ice"],929:["water","dragon"],930:["water","ice"],931:["steel","dragon"],932:["dragon","ghost"],933:["dragon","ghost"],934:["dragon","ghost"],935:["fairy","steel"],936:["fighting","steel"],937:["poison","dragon"],938:["fighting"],939:["fighting","dark"],940:["dark","grass"],941:["electric"],942:["dragon"],943:["ice"],944:["ghost"],945:["psychic","grass"],946:["normal","psychic"],947:["bug","rock"],948:["ground","normal"],949:["water","ghost"],950:["fighting","poison"],951:["poison","water"],952:["fairy","flying"],953:["grass"],954:["grass"],955:["grass","dark"],956:["fire"],957:["fire"],958:["fire","ghost"],959:["water"],960:["water"],961:["water","fighting"],962:["normal"],963:["normal"],964:["bug"],965:["bug"],966:["bug"],967:["bug","dark"],968:["electric"],969:["electric","fighting"],970:["electric","fighting"],971:["normal"],972:["normal"],973:["fairy"],974:["fairy"],975:["grass","normal"],976:["grass","normal"],977:["grass","normal"],978:["normal","flying"],979:["rock","salt"],980:["rock"],981:["rock"],982:["fire"],983:["fire","psychic"],984:["fire","ghost"],985:["electric"],986:["electric"],987:["electric","flying"],988:["electric","flying"],989:["dark"],990:["dark"],991:["poison","normal"],992:["poison","normal"],993:["grass","ghost"],994:["grass","ghost"],995:["grass","ground"],996:["grass","ground"],997:["rock"],998:["grass","fire"],999:["grass","fire"],1000:["bug","psychic"],1001:["bug","psychic"],1002:["psychic","flying"],1003:["psychic","flying"],1004:["fairy","steel"],1005:["fairy","steel"],1006:["fairy","steel"],1007:["water","ground"],1008:["water","ground"],1009:["dark","flying"],1010:["water"],1011:["water","fighting"],1012:["poison","steel"],1013:["poison","steel"],1014:["dragon","normal"],1015:["steel","ground"],1016:["rock","poison"],1017:["rock","poison"],1018:["ghost"],1019:["ghost"],1020:["flying","fire"],1021:["ice"],1022:["ice"],1023:["water","psychic"],1024:["water"],1025:["dragon","water"]
+};
+
+async function loadPokemonData() {
+  const loadProg = document.getElementById('load-progress');
+  loadProg.textContent = 'Daten werden aufgebaut...';
+
+  // Build all pokemon from local data (no API needed for basic info)
+  allPokemon = [];
+  for (let id = 1; id <= TOTAL; id++) {
+    allPokemon.push({
+      id,
+      name: (germanNames[id] || 'Pokemon ' + id).toLowerCase(),
+      displayNameEn: getPokemonEnName(id),
+      types: typeData[id] || ['normal'],
+      // Use sprites from a reliable source
+      sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
+    });
+  }
+
+  loadProg.textContent = 'Alle 1025 Pokémon bereit!';
+  setTimeout(() => showApp(), 300);
+}
+
+function getPokemonEnName(id) {
+  const names = {1:"Bulbasaur",2:"Ivysaur",3:"Venusaur",4:"Charmander",5:"Charmeleon",6:"Charizard",7:"Squirtle",8:"Wartortle",9:"Blastoise",10:"Caterpie",11:"Metapod",12:"Butterfree",13:"Weedle",14:"Kakuna",15:"Beedrill",16:"Pidgey",17:"Pidgeotto",18:"Pidgeot",19:"Rattata",20:"Raticate",21:"Spearow",22:"Fearow",23:"Ekans",24:"Arbok",25:"Pikachu",26:"Raichu",27:"Sandshrew",28:"Sandslash",29:"Nidoran♀",30:"Nidorina",31:"Nidoqueen",32:"Nidoran♂",33:"Nidorino",34:"Nidoking",35:"Clefairy",36:"Clefable",37:"Vulpix",38:"Ninetales",39:"Jigglypuff",40:"Wigglytuff",41:"Zubat",42:"Golbat",43:"Oddish",44:"Gloom",45:"Vileplume",46:"Paras",47:"Parasect",48:"Venonat",49:"Venomoth",50:"Diglett",51:"Dugtrio",52:"Meowth",53:"Persian",54:"Psyduck",55:"Golduck",56:"Mankey",57:"Primeape",58:"Growlithe",59:"Arcanine",60:"Poliwag",61:"Poliwhirl",62:"Poliwrath",63:"Abra",64:"Kadabra",65:"Alakazam",66:"Machop",67:"Machoke",68:"Machamp",69:"Bellsprout",70:"Weepinbell",71:"Victreebel",72:"Tentacool",73:"Tentacruel",74:"Geodude",75:"Graveler",76:"Golem",77:"Ponyta",78:"Rapidash",79:"Slowpoke",80:"Slowbro",81:"Magnemite",82:"Magneton",83:"Farfetch'd",84:"Doduo",85:"Dodrio",86:"Seel",87:"Dewgong",88:"Grimer",89:"Muk",90:"Shellder",91:"Cloyster",92:"Gastly",93:"Haunter",94:"Gengar",95:"Onix",96:"Drowzee",97:"Hypno",98:"Krabby",99:"Kingler",100:"Voltorb",101:"Electrode",102:"Exeggcute",103:"Exeggutor",104:"Cubone",105:"Marowak",106:"Hitmonlee",107:"Hitmonchan",108:"Lickitung",109:"Koffing",110:"Weezing",111:"Rhyhorn",112:"Rhydon",113:"Chansey",114:"Tangela",115:"Kangaskhan",116:"Horsea",117:"Seadra",118:"Goldeen",119:"Seaking",120:"Staryu",121:"Starmie",122:"Mr. Mime",123:"Scyther",124:"Jynx",125:"Electabuzz",126:"Magmar",127:"Pinsir",128:"Tauros",129:"Magikarp",130:"Gyarados",131:"Lapras",132:"Ditto",133:"Eevee",134:"Vaporeon",135:"Jolteon",136:"Flareon",137:"Porygon",138:"Omanyte",139:"Omastar",140:"Kabuto",141:"Kabutops",142:"Aerodactyl",143:"Snorlax",144:"Articuno",145:"Zapdos",146:"Moltres",147:"Dratini",148:"Dragonair",149:"Dragonite",150:"Mewtwo",151:"Mew",152:"Chikorita",153:"Bayleef",154:"Meganium",155:"Cyndaquil",156:"Quilava",157:"Typhlosion",158:"Totodile",159:"Croconaw",160:"Feraligatr",161:"Sentret",162:"Furret",163:"Hoothoot",164:"Noctowl",165:"Ledyba",166:"Ledian",167:"Spinarak",168:"Ariados",169:"Crobat",170:"Chinchou",171:"Lanturn",172:"Pichu",173:"Cleffa",174:"Igglybuff",175:"Togepi",176:"Togetic",177:"Natu",178:"Xatu",179:"Mareep",180:"Flaaffy",181:"Ampharos",182:"Bellossom",183:"Marill",184:"Azumarill",185:"Sudowoodo",186:"Politoed",187:"Hoppip",188:"Skiploom",189:"Jumpluff",190:"Aipom",191:"Sunkern",192:"Sunflora",193:"Yanma",194:"Wooper",195:"Quagsire",196:"Espeon",197:"Umbreon",198:"Murkrow",199:"Slowking",200:"Misdreavus",201:"Unown",202:"Wobbuffet",203:"Girafarig",204:"Pineco",205:"Forretress",206:"Dunsparce",207:"Gligar",208:"Steelix",209:"Snubbull",210:"Granbull",211:"Qwilfish",212:"Scizor",213:"Shuckle",214:"Heracross",215:"Sneasel",216:"Teddiursa",217:"Ursaring",218:"Slugma",219:"Magcargo",220:"Swinub",221:"Piloswine",222:"Corsola",223:"Remoraid",224:"Octillery",225:"Delibird",226:"Mantine",227:"Skarmory",228:"Houndour",229:"Houndoom",230:"Kingdra",231:"Phanpy",232:"Donphan",233:"Porygon2",234:"Stantler",235:"Smeargle",236:"Tyrogue",237:"Hitmontop",238:"Smoochum",239:"Elekid",240:"Magby",241:"Miltank",242:"Blissey",243:"Raikou",244:"Entei",245:"Suicune",246:"Larvitar",247:"Pupitar",248:"Tyranitar",249:"Lugia",250:"Ho-Oh",251:"Celebi",252:"Treecko",253:"Grovyle",254:"Sceptile",255:"Torchic",256:"Combusken",257:"Blaziken",258:"Mudkip",259:"Marshtomp",260:"Swampert",261:"Poochyena",262:"Mightyena",263:"Zigzagoon",264:"Linoone",265:"Wurmple",266:"Silcoon",267:"Beautifly",268:"Cascoon",269:"Dustox",270:"Lotad",271:"Lombre",272:"Ludicolo",273:"Seedot",274:"Nuzleaf",275:"Shiftry",276:"Taillow",277:"Swellow",278:"Wingull",279:"Pelipper",280:"Ralts",281:"Kirlia",282:"Gardevoir",283:"Surskit",284:"Masquerain",285:"Shroomish",286:"Breloom",287:"Slakoth",288:"Vigoroth",289:"Slaking",290:"Nincada",291:"Ninjask",292:"Shedinja",293:"Whismur",294:"Loudred",295:"Exploud",296:"Makuhita",297:"Hariyama",298:"Azurill",299:"Nosepass",300:"Skitty",301:"Delcatty",302:"Sableye",303:"Mawile",304:"Aron",305:"Lairon",306:"Aggron",307:"Meditite",308:"Medicham",309:"Electrike",310:"Manectric",311:"Plusle",312:"Minun",313:"Volbeat",314:"Illumise",315:"Roselia",316:"Gulpin",317:"Swalot",318:"Carvanha",319:"Sharpedo",320:"Wailmer",321:"Wailord",322:"Numel",323:"Camerupt",324:"Torkoal",325:"Spoink",326:"Grumpig",327:"Spinda",328:"Trapinch",329:"Vibrava",330:"Flygon",331:"Cacnea",332:"Cacturne",333:"Swablu",334:"Altaria",335:"Zangoose",336:"Seviper",337:"Lunatone",338:"Solrock",339:"Barboach",340:"Whiscash",341:"Corphish",342:"Crawdaunt",343:"Baltoy",344:"Claydol",345:"Lileep",346:"Cradily",347:"Anorith",348:"Armaldo",349:"Feebas",350:"Milotic",351:"Castform",352:"Kecleon",353:"Shuppet",354:"Banette",355:"Duskull",356:"Dusclops",357:"Tropius",358:"Chimecho",359:"Absol",360:"Wynaut",361:"Snorunt",362:"Glalie",363:"Spheal",364:"Sealeo",365:"Walrein",366:"Clamperl",367:"Huntail",368:"Gorebyss",369:"Relicanth",370:"Luvdisc",371:"Bagon",372:"Shelgon",373:"Salamence",374:"Beldum",375:"Metang",376:"Metagross",377:"Regirock",378:"Regice",379:"Registeel",380:"Latias",381:"Latios",382:"Kyogre",383:"Groudon",384:"Rayquaza",385:"Jirachi",386:"Deoxys",387:"Turtwig",388:"Grotle",389:"Torterra",390:"Chimchar",391:"Monferno",392:"Infernape",393:"Piplup",394:"Prinplup",395:"Empoleon",396:"Starly",397:"Staravia",398:"Staraptor",399:"Bidoof",400:"Bibarel",401:"Kricketot",402:"Kricketune",403:"Shinx",404:"Luxio",405:"Luxray",406:"Budew",407:"Roserade",408:"Cranidos",409:"Rampardos",410:"Shieldon",411:"Bastiodon",412:"Burmy",413:"Wormadam",414:"Mothim",415:"Combee",416:"Vespiquen",417:"Pachirisu",418:"Buizel",419:"Floatzel",420:"Cherubi",421:"Cherrim",422:"Shellos",423:"Gastrodon",424:"Ambipom",425:"Drifloon",426:"Drifblim",427:"Buneary",428:"Lopunny",429:"Mismagius",430:"Honchkrow",431:"Glameow",432:"Purugly",433:"Chingling",434:"Stunky",435:"Skuntank",436:"Bronzor",437:"Bronzong",438:"Bonsly",439:"Mime Jr.",440:"Happiny",441:"Chatot",442:"Spiritomb",443:"Gible",444:"Gabite",445:"Garchomp",446:"Munchlax",447:"Riolu",448:"Lucario",449:"Hippopotas",450:"Hippowdon",451:"Skorupi",452:"Drapion",453:"Croagunk",454:"Toxicroak",455:"Carnivine",456:"Finneon",457:"Lumineon",458:"Mantyke",459:"Snover",460:"Abomasnow",461:"Weavile",462:"Magnezone",463:"Lickilicky",464:"Rhyperior",465:"Tangrowth",466:"Electivire",467:"Magmortar",468:"Togekiss",469:"Yanmega",470:"Leafeon",471:"Glaceon",472:"Gliscor",473:"Mamoswine",474:"Porygon-Z",475:"Gallade",476:"Probopass",477:"Dusknoir",478:"Froslass",479:"Rotom",480:"Uxie",481:"Mesprit",482:"Azelf",483:"Dialga",484:"Palkia",485:"Heatran",486:"Regigigas",487:"Giratina",488:"Cresselia",489:"Phione",490:"Manaphy",491:"Darkrai",492:"Shaymin",493:"Arceus",494:"Victini",495:"Snivy",496:"Servine",497:"Serperior",498:"Tepig",499:"Pignite",500:"Emboar",501:"Oshawott",502:"Dewott",503:"Samurott",504:"Patrat",505:"Watchog",506:"Lillipup",507:"Herdier",508:"Stoutland",509:"Purrloin",510:"Liepard",511:"Pansage",512:"Simisage",513:"Pansear",514:"Simisear",515:"Panpour",516:"Simipour",517:"Munna",518:"Musharna",519:"Pidove",520:"Tranquill",521:"Unfezant",522:"Blitzle",523:"Zebstrika",524:"Roggenrola",525:"Boldore",526:"Gigalith",527:"Woobat",528:"Swoobat",529:"Drilbur",530:"Excadrill",531:"Audino",532:"Timburr",533:"Gurdurr",534:"Conkeldurr",535:"Tympole",536:"Palpitoad",537:"Seismitoad",538:"Throh",539:"Sawk",540:"Sewaddle",541:"Swadloon",542:"Leavanny",543:"Venipede",544:"Whirlipede",545:"Scolipede",546:"Cottonee",547:"Whimsicott",548:"Petilil",549:"Lilligant",550:"Basculin",551:"Sandile",552:"Krokorok",553:"Krookodile",554:"Darumaka",555:"Darmanitan",556:"Maractus",557:"Dwebble",558:"Crustle",559:"Scraggy",560:"Scrafty",561:"Sigilyph",562:"Yamask",563:"Cofagrigus",564:"Tirtouga",565:"Carracosta",566:"Archen",567:"Archeops",568:"Trubbish",569:"Garbodor",570:"Zorua",571:"Zoroark",572:"Minccino",573:"Cinccino",574:"Gothita",575:"Gothorita",576:"Gothitelle",577:"Solosis",578:"Duosion",579:"Reuniclus",580:"Ducklett",581:"Swanna",582:"Vanillite",583:"Vanillish",584:"Vanilluxe",585:"Deerling",586:"Sawsbuck",587:"Emolga",588:"Karrablast",589:"Escavalier",590:"Foongus",591:"Amoonguss",592:"Frillish",593:"Jellicent",594:"Alomomola",595:"Joltik",596:"Galvantula",597:"Ferroseed",598:"Ferrothorn",599:"Klink",600:"Klang",601:"Klinklang",602:"Tynamo",603:"Eelektrik",604:"Eelektross",605:"Elgyem",606:"Beheeyem",607:"Litwick",608:"Lampent",609:"Chandelure",610:"Axew",611:"Fraxure",612:"Haxorus",613:"Cubchoo",614:"Beartic",615:"Cryogonal",616:"Shelmet",617:"Accelgor",618:"Stunfisk",619:"Mienfoo",620:"Mienshao",621:"Druddigon",622:"Golett",623:"Golurk",624:"Pawniard",625:"Bisharp",626:"Bouffalant",627:"Rufflet",628:"Braviary",629:"Vullaby",630:"Mandibuzz",631:"Heatmor",632:"Durant",633:"Deino",634:"Zweilous",635:"Hydreigon",636:"Larvesta",637:"Volcarona",638:"Cobalion",639:"Terrakion",640:"Virizion",641:"Tornadus",642:"Thundurus",643:"Reshiram",644:"Zekrom",645:"Landorus",646:"Kyurem",647:"Keldeo",648:"Meloetta",649:"Genesect",650:"Chespin",651:"Quilladin",652:"Chesnaught",653:"Fennekin",654:"Braixen",655:"Delphox",656:"Froakie",657:"Frogadier",658:"Greninja",659:"Bunnelby",660:"Diggersby",661:"Fletchling",662:"Fletchinder",663:"Talonflame",664:"Scatterbug",665:"Spewpa",666:"Vivillon",667:"Litleo",668:"Pyroar",669:"Flabébé",670:"Floette",671:"Florges",672:"Skiddo",673:"Gogoat",674:"Pancham",675:"Pangoro",676:"Furfrou",677:"Espurr",678:"Meowstic",679:"Honedge",680:"Doublade",681:"Aegislash",682:"Spritzee",683:"Aromatisse",684:"Swirlix",685:"Slurpuff",686:"Inkay",687:"Malamar",688:"Binacle",689:"Barbaracle",690:"Skrelp",691:"Dragalge",692:"Clauncher",693:"Clawitzer",694:"Helioptile",695:"Heliolisk",696:"Tyrunt",697:"Tyrantrum",698:"Amaura",699:"Aurorus",700:"Sylveon",701:"Hawlucha",702:"Dedenne",703:"Carbink",704:"Goomy",705:"Sliggoo",706:"Goodra",707:"Klefki",708:"Phantump",709:"Trevenant",710:"Pumpkaboo",711:"Gourgeist",712:"Bergmite",713:"Avalugg",714:"Noibat",715:"Noivern",716:"Xerneas",717:"Yveltal",718:"Zygarde",719:"Diancie",720:"Hoopa",721:"Volcanion",722:"Rowlet",723:"Dartrix",724:"Decidueye",725:"Litten",726:"Torracat",727:"Incineroar",728:"Popplio",729:"Brionne",730:"Primarina",731:"Pikipek",732:"Trumbeak",733:"Toucannon",734:"Yungoos",735:"Gumshoos",736:"Grubbin",737:"Charjabug",738:"Vikavolt",739:"Crabrawler",740:"Crabominable",741:"Oricorio",742:"Cutiefly",743:"Ribombee",744:"Rockruff",745:"Lycanroc",746:"Wishiwashi",747:"Mareanie",748:"Toxapex",749:"Mudbray",750:"Mudsdale",751:"Dewpider",752:"Araquanid",753:"Fomantis",754:"Lurantis",755:"Morelull",756:"Shiinotic",757:"Salandit",758:"Salazzle",759:"Stufful",760:"Bewear",761:"Bounsweet",762:"Steenee",763:"Tsareena",764:"Comfey",765:"Oranguru",766:"Passimian",767:"Wimpod",768:"Golisopod",769:"Sandygast",770:"Palossand",771:"Pyukumuku",772:"Type: Null",773:"Silvally",774:"Minior",775:"Komala",776:"Turtonator",777:"Togedemaru",778:"Mimikyu",779:"Bruxish",780:"Drampa",781:"Dhelmise",782:"Jangmo-o",783:"Hakamo-o",784:"Kommo-o",785:"Tapu Koko",786:"Tapu Lele",787:"Tapu Bulu",788:"Tapu Fini",789:"Cosmog",790:"Cosmoem",791:"Solgaleo",792:"Lunala",793:"Nihilego",794:"Buzzwole",795:"Pheromosa",796:"Xurkitree",797:"Celesteela",798:"Kartana",799:"Guzzlord",800:"Necrozma",801:"Magearna",802:"Marshadow",803:"Poipole",804:"Naganadel",805:"Stakataka",806:"Blacephalon",807:"Zeraora",808:"Meltan",809:"Melmetal",810:"Grookey",811:"Thwackey",812:"Rillaboom",813:"Scorbunny",814:"Raboot",815:"Cinderace",816:"Sobble",817:"Drizzile",818:"Inteleon",819:"Skwovet",820:"Greedent",821:"Rookidee",822:"Corvisquire",823:"Corviknight",824:"Blipbug",825:"Dottler",826:"Orbeetle",827:"Nickit",828:"Thievul",829:"Gossifleur",830:"Eldegoss",831:"Wooloo",832:"Dubwool",833:"Chewtle",834:"Drednaw",835:"Yamper",836:"Boltund",837:"Rolycoly",838:"Carkol",839:"Coalossal",840:"Applin",841:"Flapple",842:"Appletun",843:"Silicobra",844:"Sandaconda",845:"Cramorant",846:"Arrokuda",847:"Barraskewda",848:"Toxel",849:"Toxtricity",850:"Sizzlipede",851:"Centiskorch",852:"Clobbopus",853:"Grapploct",854:"Sinistea",855:"Polteageist",856:"Hatenna",857:"Hattrem",858:"Hatterene",859:"Impidimp",860:"Morgrem",861:"Grimmsnarl",862:"Obstagoon",863:"Perrserker",864:"Cursola",865:"Sirfetch'd",866:"Mr. Rime",867:"Runerigus",868:"Milcery",869:"Alcremie",870:"Falinks",871:"Pincurchin",872:"Snom",873:"Frosmoth",874:"Stonjourner",875:"Eiscue",876:"Indeedee",877:"Morpeko",878:"Cufant",879:"Copperajah",880:"Dracozolt",881:"Arctozolt",882:"Dracovish",883:"Arctovish",884:"Duraludon",885:"Dreepy",886:"Drakloak",887:"Dragapult",888:"Zacian",889:"Zamazenta",890:"Eternatus",891:"Kubfu",892:"Urshifu",893:"Zarude",894:"Regieleki",895:"Regidrago",896:"Glastrier",897:"Spectrier",898:"Calyrex",899:"Wyrdeer",900:"Kleavor",901:"Ursaluna",902:"Basculegion",903:"Sneasler",904:"Overqwil",905:"Enamorus",906:"Sprigatito",907:"Floragato",908:"Meowscarada",909:"Fuecoco",910:"Crocalor",911:"Skeledirge",912:"Quaxly",913:"Quaxwell",914:"Quaquaval",915:"Lechonk",916:"Oinkologne",917:"Tarountula",918:"Spidops",919:"Nymble",920:"Lokix",921:"Pawmi",922:"Pawmo",923:"Pawmot",924:"Tandemaus",925:"Maushold",926:"Fidough",927:"Dachsbun",928:"Smoliv",929:"Dolliv",930:"Arboliva",931:"Squawkabilly",932:"Nacli",933:"Naclstack",934:"Garganacl",935:"Charcadet",936:"Armarouge",937:"Ceruledge",938:"Tadbulb",939:"Bellibolt",940:"Wattrel",941:"Kilowattrel",942:"Maschiff",943:"Mabosstiff",944:"Shroodle",945:"Grafaiai",946:"Bramblin",947:"Brambleghast",948:"Toedscool",949:"Toedscruel",950:"Klawf",951:"Capsakid",952:"Scovillain",953:"Rellor",954:"Rabsca",955:"Flittle",956:"Espathra",957:"Tinkatink",958:"Tinkatuff",959:"Tinkaton",960:"Wiglett",961:"Wugtrio",962:"Bombirdier",963:"Finizen",964:"Palafin",965:"Varoom",966:"Revavroom",967:"Cyclizar",968:"Orthworm",969:"Glimmet",970:"Glimmora",971:"Greavard",972:"Houndstone",973:"Flamigo",974:"Cetoddle",975:"Cetitan",976:"Veluza",977:"Dondozo",978:"Tatsugiri",979:"Annihilape",980:"Clodsire",981:"Farigiraf",982:"Dudunsparce",983:"Kingambit",984:"Great Tusk",985:"Scream Tail",986:"Brute Bonnet",987:"Flutter Mane",988:"Slither Wing",989:"Sandy Shocks",990:"Iron Treads",991:"Iron Bundle",992:"Iron Hands",993:"Iron Jugulis",994:"Iron Moth",995:"Iron Thorns",996:"Frigibax",997:"Arctibax",998:"Baxcalibur",999:"Gimmighoul",1000:"Gholdengo",1001:"Wo-Chien",1002:"Chien-Pao",1003:"Ting-Lu",1004:"Chi-Yu",1005:"Roaring Moon",1006:"Iron Valiant",1007:"Koraidon",1008:"Miraidon",1009:"Walking Wake",1010:"Iron Leaves",1011:"Dipplin",1012:"Poltchageist",1013:"Sinistcha",1014:"Okidogi",1015:"Munkidori",1016:"Fezandipiti",1017:"Ogerpon",1018:"Archaludon",1019:"Hydrapple",1020:"Gouging Fire",1021:"Raging Bolt",1022:"Iron Boulder",1023:"Iron Crown",1024:"Terapagos",1025:"Pecharunt"};
+  return names[id] || 'Pokemon ' + id;
+}
+
+function showApp() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('grid').style.display = 'grid';
+  renderGrid();
+  updateStats();
+}
+
+// Init
+loadCaught();
+buildTabs();
+loadPokemonData();
+
+document.getElementById('search').addEventListener('input', renderGrid);
+document.getElementById('filter-caught').addEventListener('change', renderGrid);
+document.getElementById('filter-type').addEventListener('change', renderGrid);
+</script>
+</body>
+</html>

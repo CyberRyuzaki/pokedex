@@ -1065,23 +1065,64 @@ async function fetchTcgCards(pokemon) {
   const enName = pokemon.displayNameEn || '';
   const deName = germanNames[pokemon.id] || enName;
 
-  try {
-    // Suche NUR auf Englisch - DE-Übersetzungen in TCGdex sind unvollständig
-    // Verwende exacte Suche: name=eq:Charmander
-    const res = await fetch(
-      `https://api.tcgdex.net/v2/en/cards?name=eq:${encodeURIComponent(enName)}&itemsPerPage=500`
-    );
-    if (!res.ok) throw new Error('Status ' + res.status);
-    const briefCards = await res.json();
+  // Verschiedene URL-Formate probieren
+  const searchUrls = [
+    `https://api.tcgdex.net/v2/en/cards?name=eq:${encodeURIComponent(enName)}&itemsPerPage=500`,
+    `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(enName)}&itemsPerPage=500`,
+    `https://api.tcgdex.net/v2/en/pokemon/${pokemon.id}/cards`,
+  ];
 
-    if (!Array.isArray(briefCards) || briefCards.length === 0) {
-      body.innerHTML = `<div class="tcg-empty">😔 Keine TCG Karten für <b>${deName}</b> gefunden.</div>`;
+  body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Suche Karten für ${deName}...</div>`;
+
+  try {
+    let briefCards = null;
+
+    for (const url of searchUrls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          // Wenn kein exakter Match filter: nur exakt passende Namen
+          const exact = data.filter(c => (c.name||'').toLowerCase() === enName.toLowerCase());
+          briefCards = exact.length > 0 ? exact : data;
+          break;
+        }
+      } catch(e) { continue; }
+    }
+
+    // Fallback: dexId
+    if (!briefCards || briefCards.length === 0) {
+      const res = await fetch(`https://api.tcgdex.net/v2/en/cards?dexId=${pokemon.id}&itemsPerPage=500`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const exact = data.filter(c => (c.name||'').toLowerCase() === enName.toLowerCase());
+          briefCards = exact.length > 0 ? exact : [];
+        }
+      }
+    }
+
+    if (!briefCards || briefCards.length === 0) {
+      // Debug-Info anzeigen um zu sehen was die API wirklich liefert
+      try {
+        const debugRes = await fetch(`https://api.tcgdex.net/v2/en/cards?dexId=${pokemon.id}&itemsPerPage=10`);
+        const debugData = debugRes.ok ? await debugRes.json() : [];
+        const names = Array.isArray(debugData) ? debugData.slice(0,5).map(c=>c.name).join(', ') : 'keine';
+        body.innerHTML = `<div class="tcg-empty">
+          😔 Keine Karten für <b>${deName}</b> gefunden.<br>
+          <span style="font-size:10px;color:var(--text-muted);margin-top:8px;display:block">
+            API liefert für dexId ${pokemon.id}: "${names || 'nichts'}"
+          </span>
+        </div>`;
+      } catch(e) {
+        body.innerHTML = `<div class="tcg-empty">😔 Keine Karten für <b>${deName}</b> gefunden.</div>`;
+      }
       return;
     }
 
     body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Lade ${briefCards.length} Karten...</div>`;
 
-    // Vollständige Details laden (EN für Daten, aber wir zeigen DE-Namen)
     const fullCards = [];
     const batchSize = 20;
     for (let i = 0; i < briefCards.length; i += batchSize) {
@@ -1103,7 +1144,6 @@ async function fetchTcgCards(pokemon) {
       return;
     }
 
-    // Nach Set gruppieren + nach Erscheinungsdatum sortieren
     const sets = {};
     fullCards.forEach(card => {
       const setName = card.set?.name || 'Unbekannt';
@@ -1113,15 +1153,13 @@ async function fetchTcgCards(pokemon) {
     });
 
     const sortedSets = Object.values(sets).sort((a, b) => a.date.localeCompare(b.date));
-
     body.innerHTML = `<div class="modal-count">${fullCards.length} Karte${fullCards.length !== 1 ? 'n' : ''} in ${sortedSets.length} Set${sortedSets.length !== 1 ? 's' : ''}</div>`;
 
     sortedSets.forEach(({ name: setName, date, cards: setCards }) => {
       const group = document.createElement('div');
       group.className = 'tcg-set-group';
       const year = date && date !== '9999-99-99'
-        ? ` <span style="color:var(--text-muted);font-weight:400">(${date.substring(0, 4)})</span>`
-        : '';
+        ? ` <span style="color:var(--text-muted);font-weight:400">(${date.substring(0, 4)})</span>` : '';
       group.innerHTML = `<div class="tcg-set-title">${setName}${year}</div>`;
 
       const cardsGrid = document.createElement('div');
@@ -1140,9 +1178,7 @@ async function fetchTcgCards(pokemon) {
           ${imgUrl
             ? `<div class="card-img-wrap">
                 <div class="card-img-skeleton"></div>
-                <img src="${imgUrl}"
-                     alt="${card.name}"
-                     loading="lazy"
+                <img src="${imgUrl}" alt="${card.name}" loading="lazy"
                      onload="this.previousElementSibling.style.display='none';this.style.opacity='1'"
                      onerror="tcgImgError(this, '${imgUrlHigh}')"
                      style="opacity:0;transition:opacity 0.3s;position:relative;z-index:1">
@@ -1162,9 +1198,9 @@ async function fetchTcgCards(pokemon) {
     console.error('TCG fetch error:', e);
     body.innerHTML = `
       <div class="tcg-error">
-        ⚠️ Karten konnten nicht geladen werden.<br>
+        ⚠️ Fehler: ${e.message}<br>
         <span style="font-size:11px;color:var(--text-muted);margin-top:8px;display:block">
-          Prüfe deine Internetverbindung.<br>${e.message}
+          Prüfe deine Internetverbindung.
         </span>
       </div>`;
   }

@@ -1072,16 +1072,14 @@ async function fetchTcgCards(pokemon) {
     const res = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}`);
     if (!res.ok) throw new Error('Status ' + res.status);
     const data = await res.json();
-    const cards = (data.data || []).filter(c =>
-      c.name && c.name.toLowerCase() === enName.toLowerCase()
-    );
+    const cards = data.data || [];
 
     if (cards.length === 0) {
       body.innerHTML = `<div class="tcg-empty">😔 Keine TCG Karten für <b>${deName}</b> gefunden.</div>`;
       return;
     }
 
-    // Nach Set gruppieren + nach Datum sortieren
+    // Nach Set gruppieren (bereits sortiert vom Worker)
     const sets = {};
     cards.forEach(card => {
       const setName = card.set?.name || 'Unbekannt';
@@ -1090,7 +1088,7 @@ async function fetchTcgCards(pokemon) {
       sets[setName].cards.push(card);
     });
 
-    const sortedSets = Object.values(sets).sort((a, b) => a.date.localeCompare(b.date));
+    const sortedSets = Object.values(sets);
     body.innerHTML = `<div class="modal-count">${cards.length} Karte${cards.length !== 1 ? 'n' : ''} in ${sortedSets.length} Set${sortedSets.length !== 1 ? 's' : ''}</div>`;
 
     sortedSets.forEach(({ name: setName, date, cards: setCards }) => {
@@ -1107,7 +1105,7 @@ async function fetchTcgCards(pokemon) {
         const cardEl = document.createElement('div');
         cardEl.className = 'tcg-card';
         cardEl.title = `${card.name} · ${setName} #${card.number}`;
-        cardEl.onclick = () => window.open(`https://www.pokemon.com/de/pokemonkarten/${card.id}`, '_blank');
+        cardEl.onclick = () => window.open(`https://www.tcgplayer.com/search/pokemon/${encodeURIComponent(setName)}?productLineName=pokemon&q=${encodeURIComponent(card.name)}`, '_blank');
 
         const imgUrl     = card.images?.small || '';
         const imgUrlHigh = card.images?.large  || '';
@@ -1138,7 +1136,7 @@ async function fetchTcgCards(pokemon) {
       <div class="tcg-error">
         ⚠️ Karten konnten nicht geladen werden.<br>
         <span style="font-size:11px;color:var(--text-muted);margin-top:8px;display:block">
-          Prüfe deine Internetverbindung.<br>${e.message}
+          ${e.message}
         </span>
       </div>`;
   }

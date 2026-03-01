@@ -1079,16 +1079,17 @@ async function fetchTcgCards(pokemon) {
     if (cachedData.source === 'cache') {
       cards = cachedData.data || [];
     } else {
-      // Nicht gecacht - alle Chunks parallel laden
-      const totalChunks = cachedData.totalChunks || 7;
-      const chunkPromises = Array.from({ length: totalChunks }, (_, i) =>
-        fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}&chunk=${i}`)
-          .then(r => r.json())
-          .then(d => d.data || [])
-          .catch(() => [])
-      );
-      const chunkResults = await Promise.all(chunkPromises);
-      const allCards = chunkResults.flat();
+      // Nicht gecacht - Chunks sequenziell laden mit Progress
+      const totalChunks = cachedData.totalChunks || 17;
+      let allCards = [];
+      for (let i = 0; i < totalChunks; i++) {
+        body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Lade Sets... ${i+1}/${totalChunks}</div>`;
+        try {
+          const r = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}&chunk=${i}`);
+          const d = await r.json();
+          allCards = allCards.concat(d.data || []);
+        } catch(e) {}
+      }
       const seen = new Set();
       cards = allCards.filter(c => {
         if (seen.has(c.id)) return false;

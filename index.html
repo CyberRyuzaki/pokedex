@@ -1090,6 +1090,7 @@ async function fetchTcgCards(pokemon) {
             const r = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}&chunk=${i}`);
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const d = await r.json();
+            console.log(`Chunk ${i}: ${(d.data||[]).length} Karten, Sets: ${(d.setsInChunk||[]).join(',')}`);
             allCards = allCards.concat(d.data || []);
             break; // Erfolg - nächster Chunk
           } catch(e) {

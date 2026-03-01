@@ -1179,7 +1179,7 @@ async function fetchTcgCards(pokemon) {
         const cardEl = document.createElement('div');
         cardEl.className = 'tcg-card';
         cardEl.title = `${card.name} · ${setName} #${card.number}`;
-        cardEl.onclick = () => window.open(`https://www.tcgplayer.com/search/pokemon/${encodeURIComponent(setName)}?productLineName=pokemon&q=${encodeURIComponent(card.name)}`, '_blank');
+        cardEl.onclick = () => openCardLightbox(card.images?.large || card.images?.small, card.name, setName, card.number);
 
         const imgUrl     = card.images?.small || '';
         const imgUrlHigh = card.images?.large  || '';
@@ -1216,6 +1216,19 @@ async function fetchTcgCards(pokemon) {
   }
 }
 
+function openCardLightbox(imgUrl, name, setName, number) {
+  const lb = document.getElementById('card-lightbox');
+  document.getElementById('card-lightbox-img').src = imgUrl || '';
+  document.getElementById('card-lightbox-label').textContent = `${name} · ${setName} #${number}`;
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeCardLightbox() {
+  document.getElementById('card-lightbox').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCardLightbox(); });
+
 function toggleFilters() {
   const panel = document.getElementById('controls-panel');
   const icon = document.getElementById('filter-toggle-icon');
@@ -1235,6 +1248,13 @@ document.getElementById('filter-caught').addEventListener('change', renderGrid);
 document.getElementById('filter-type').addEventListener('change', renderGrid);
 </script>
 
+
+<!-- Card Lightbox -->
+<div id="card-lightbox" onclick="closeCardLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px">
+  <img id="card-lightbox-img" src="" alt="" style="max-width:min(90vw,400px);max-height:80vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.8);object-fit:contain">
+  <div id="card-lightbox-label" style="color:#fff;font-size:14px;text-align:center;opacity:0.8"></div>
+  <button onclick="closeCardLightbox()" style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:24px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+</div>
 <!-- TCG Modal -->
 <div class="modal-overlay" id="tcg-modal" onclick="if(event.target===this)closeTcgModal()">
   <div class="modal">

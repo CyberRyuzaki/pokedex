@@ -189,7 +189,7 @@
     margin: 20px auto;
     padding: 0 16px 60px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* overridden by data-cols */
     gap: 10px;
   }
 
@@ -341,6 +341,58 @@
     font-size: 16px;
   }
 
+
+  /* View toggle buttons */
+  .view-toggle {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .view-btn {
+    background: none;
+    border: none;
+    border-radius: 5px;
+    color: var(--text-muted);
+    padding: 4px 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .view-btn:hover { color: var(--text); background: var(--card-hover); }
+  .view-btn.active { background: var(--accent); color: white; }
+
+  /* Dynamic grid columns via CSS vars */
+  .grid-container { --cols: 140px; }
+  .grid-container[data-cols="1"] { grid-template-columns: 1fr; }
+  .grid-container[data-cols="2"] { grid-template-columns: repeat(2, 1fr); }
+  .grid-container[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
+  .grid-container[data-cols="4"] { grid-template-columns: repeat(4, 1fr); }
+  .grid-container[data-cols="5"] { grid-template-columns: repeat(5, 1fr); }
+  .grid-container[data-cols="auto"] { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+
+  /* Compact card for small columns */
+  .grid-container[data-cols="4"] .poke-img,
+  .grid-container[data-cols="5"] .poke-img { width: 56px; height: 56px; }
+  .grid-container[data-cols="4"] .poke-name-de,
+  .grid-container[data-cols="5"] .poke-name-de { font-size: 10px; }
+  .grid-container[data-cols="4"] .poke-name-en,
+  .grid-container[data-cols="5"] .poke-name-en { display: none; }
+  .grid-container[data-cols="5"] .type-badges { display: none; }
+  .grid-container[data-cols="1"] .poke-card { display: flex; align-items: center; gap: 16px; text-align: left; padding: 10px 16px; }
+  .grid-container[data-cols="1"] .poke-img { width: 64px; height: 64px; }
+  .grid-container[data-cols="1"] .poke-num { margin-bottom: 0; }
+  .grid-container[data-cols="1"] .type-badges { justify-content: flex-start; }
+  .grid-container[data-cols="1"] .caught-badge { top: 50%; transform: translateY(-50%); }
+
   /* Type colors */
   .t-normal { background: var(--normal); color: #333; }
   .t-fire { background: var(--fire); color: white; }
@@ -414,6 +466,14 @@
         <option value="steel">Stahl</option>
         <option value="fairy">Fee</option>
       </select>
+      <div class="view-toggle" title="Spalten pro Reihe">
+        <button class="view-btn" onclick="setView(1)" data-v="1">1</button>
+        <button class="view-btn" onclick="setView(2)" data-v="2">2</button>
+        <button class="view-btn" onclick="setView(3)" data-v="3">3</button>
+        <button class="view-btn" onclick="setView(4)" data-v="4">4</button>
+        <button class="view-btn" onclick="setView(5)" data-v="5">5</button>
+        <button class="view-btn active" onclick="setView('auto')" data-v="auto">Auto</button>
+      </div>
       <button class="btn secondary" onclick="resetAll()">Reset</button>
     </div>
   </div>
@@ -480,6 +540,23 @@ const genRanges = [
   {label:"Gen VIII", min:810, max:905},
   {label:"Gen IX", min:906, max:1025}
 ];
+
+const VIEW_KEY = 'pokedex_view_v1';
+
+function setView(cols) {
+  const grid = document.getElementById('grid');
+  grid.setAttribute('data-cols', cols);
+  localStorage.setItem(VIEW_KEY, cols);
+  // Update active button
+  document.querySelectorAll('.view-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-v') == cols);
+  });
+}
+
+function loadView() {
+  const saved = localStorage.getItem(VIEW_KEY) || 'auto';
+  setView(saved);
+}
 
 function loadCaught() {
   try {
@@ -702,6 +779,7 @@ loadCaught();
 buildTabs();
 loadPokemonData();
 initFirebase();
+loadView();
 
 document.getElementById('search').addEventListener('input', renderGrid);
 document.getElementById('filter-caught').addEventListener('change', renderGrid);

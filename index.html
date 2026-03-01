@@ -1069,10 +1069,40 @@ async function fetchTcgCards(pokemon) {
   body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Suche Karten für ${deName}...</div>`;
 
   try {
-    const res = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}`);
-    if (!res.ok) throw new Error('Status ' + res.status);
-    const data = await res.json();
-    const cards = data.data || [];
+    // Erst prüfen ob KV-Cache vorhanden
+    const cached = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}`);
+    if (!cached.ok) throw new Error('Status ' + cached.status);
+    const cachedData = await cached.json();
+
+    let cards = [];
+
+    if (cachedData.source === 'cache') {
+      cards = cachedData.data || [];
+    } else {
+      // Nicht gecacht - alle Chunks parallel laden
+      const totalChunks = cachedData.totalChunks || 7;
+      const chunkPromises = Array.from({ length: totalChunks }, (_, i) =>
+        fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}&chunk=${i}`)
+          .then(r => r.json())
+          .then(d => d.data || [])
+          .catch(() => [])
+      );
+      const chunkResults = await Promise.all(chunkPromises);
+      const allCards = chunkResults.flat();
+      const seen = new Set();
+      cards = allCards.filter(c => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id);
+        return true;
+      });
+      cards.sort((a, b) => (a.set?.releaseDate || '').localeCompare(b.set?.releaseDate || ''));
+
+      // Im Worker cachen für nächstes Mal
+      fetch(`${WORKER_URL}/cache?name=${encodeURIComponent(enName)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cards)
+      }).catch(() => {});
+    }
 
     if (cards.length === 0) {
       body.innerHTML = `<div class="tcg-empty">😔 Keine TCG Karten für <b>${deName}</b> gefunden.</div>`;

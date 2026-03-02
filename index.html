@@ -794,7 +794,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "38826277",
   appId: "1:38826277:web:02c1b2ad0eb9d9ea3a6acc",
 };
-const FIREBASE_PATH = "pokedex/caught";
+let FIREBASE_PATH = "pokedex/users/default/caught";
 // ============================================================
 
 let allPokemon = [];
@@ -862,6 +862,16 @@ function updateSyncStatus(status) {
   }
 }
 
+let currentUserId = null;
+let currentUserName = null;
+
+// Einfaches Hash: name+pin → stabiler Key (kein echter Security-Anspruch)
+async function makeProfileKey(name, pin) {
+  const str = name.toLowerCase().trim() + ':' + pin;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
 async function initFirebase() {
   if (FIREBASE_CONFIG.apiKey === "DEIN_API_KEY") {
     document.getElementById('firebase-hint').style.display = 'block';
@@ -874,33 +884,64 @@ async function initFirebase() {
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db = getDatabase(app);
-    dbRef = ref(db, FIREBASE_PATH);
 
-    // Echtzeit-Listener: jede Änderung von allen Nutzern sofort sehen
-    onValue(dbRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && Array.isArray(data)) {
-        caught = new Set(data);
-        localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
-        if (document.getElementById('grid').style.display !== 'none') {
-          renderGrid();
-          updateStats();
-        }
-      }
-      firebaseReady = true;
-      updateSyncStatus('online');
-    }, (err) => {
-      console.error('Firebase error:', err);
-      updateSyncStatus('error');
-    });
-
-    // Override saveCaught to use modular API
-    window._firebaseSet = (data) => set(dbRef, data);
+    // Gespeichertes Profil aus localStorage laden
+    const savedProfile = JSON.parse(localStorage.getItem('pokedex_profile') || 'null');
+    if (savedProfile && savedProfile.key && savedProfile.name) {
+      connectUserData(db, ref, set, onValue, savedProfile.key, savedProfile.name);
+    } else {
+      showLoginModal(db, ref, set, onValue);
+    }
 
   } catch(e) {
     console.error('Firebase init error:', e);
     updateSyncStatus('error');
   }
+}
+
+function showLoginModal(db, ref, set, onValue) {
+  const modal = document.getElementById('login-modal');
+  modal.style.display = 'flex';
+  document.getElementById('login-submit').onclick = async () => {
+    const name = document.getElementById('login-name-input').value.trim();
+    const pin  = document.getElementById('login-pin-input').value.trim();
+    const err  = document.getElementById('login-error');
+    if (!name) { err.textContent = 'Bitte Name eingeben.'; return; }
+    if (!/^\d{4}$/.test(pin)) { err.textContent = 'PIN muss genau 4 Ziffern haben.'; return; }
+    err.textContent = '';
+    const key = await makeProfileKey(name, pin);
+    localStorage.setItem('pokedex_profile', JSON.stringify({ key, name }));
+    modal.style.display = 'none';
+    connectUserData(db, ref, set, onValue, key, name);
+  };
+}
+
+function connectUserData(db, ref, set, onValue, key, name) {
+  FIREBASE_PATH = `pokedex/users/${key}/caught`;
+  dbRef = ref(db, FIREBASE_PATH);
+  currentUserId = key;
+  currentUserName = name;
+  document.getElementById('user-display').textContent = `👤 ${name}`;
+  document.getElementById('user-display').style.display = 'inline-block';
+
+  onValue(dbRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data && Array.isArray(data)) {
+      caught = new Set(data);
+      localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
+      if (document.getElementById('grid').style.display !== 'none') {
+        renderGrid();
+        updateStats();
+      }
+    }
+    firebaseReady = true;
+    updateSyncStatus('online');
+  }, (err) => {
+    console.error('Firebase error:', err);
+    updateSyncStatus('error');
+  });
+
+  window._firebaseSet = (data) => set(dbRef, data);
 }
 
 function updateStats() {
@@ -1330,6 +1371,15 @@ async function onSetFilterChange() {
   }
 }
 
+function showUserMenu() {
+  const name = currentUserName || 'Unbekannt';
+  const action = confirm(`Angemeldet als: ${name}\n\nProfil wechseln? (Abmelden)\n\nOK = abmelden, Abbrechen = bleiben`);
+  if (action) {
+    localStorage.removeItem('pokedex_profile');
+    location.reload();
+  }
+}
+
 function openCardLightbox(imgUrl, name, setName, number) {
   const lb = document.getElementById('card-lightbox');
   document.getElementById('card-lightbox-img').src = imgUrl || '';
@@ -1362,6 +1412,24 @@ document.getElementById('filter-caught').addEventListener('change', renderGrid);
 document.getElementById('filter-type').addEventListener('change', renderGrid);
 </script>
 
+
+<!-- Login Modal -->
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:10000;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:32px;max-width:340px;width:90%;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🎮</div>
+    <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px">Willkommen!</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px">Name + PIN = dein persönliches Profil.<br>Gleicher Name + PIN = gleiche Daten.</div>
+    <input id="login-name-input" type="text" placeholder="Name..." maxlength="20" autocomplete="off"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:16px;box-sizing:border-box;margin-bottom:10px;font-family:Nunito,sans-serif">
+    <input id="login-pin-input" type="password" placeholder="4-stelliger PIN..." maxlength="4" inputmode="numeric" autocomplete="off"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:16px;box-sizing:border-box;margin-bottom:6px;font-family:Nunito,sans-serif;letter-spacing:4px;text-align:center"
+      onkeydown="if(event.key==='Enter')document.getElementById('login-submit').click()">
+    <div id="login-error" style="color:#e63946;font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <button id="login-submit" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif">
+      Einloggen ✓
+    </button>
+  </div>
+</div>
 
 <!-- Card Lightbox -->
 <div id="card-lightbox" onclick="closeCardLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px">

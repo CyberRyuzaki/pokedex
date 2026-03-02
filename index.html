@@ -937,16 +937,31 @@ function connectUserData(db, ref, set, onValue, key, name) {
 
   onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
-    caught = new Set(data && Array.isArray(data) ? data : []);
-    localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
-    if (document.getElementById('grid').style.display !== 'none') {
-      renderGrid();
-      updateStats();
+    console.log('[Firebase] onValue key=' + key + ' data=', data);
+    if (data !== null && Array.isArray(data)) {
+      // Firebase hat Daten → übernehmen
+      caught = new Set(data);
+      localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
+    } else if (data === null) {
+      // Firebase leer → lokale Daten hochladen falls vorhanden
+      const local = JSON.parse(localStorage.getItem('pokedex_caught_v1') || '[]');
+      caught = new Set(local);
+      if (local.length > 0 && window._firebaseSet) {
+        console.log('[Firebase] uploading local data:', local.length, 'pokemon');
+        window._firebaseSet(local);
+      }
     }
     firebaseReady = true;
     updateSyncStatus('online');
+    if (window._appShown) {
+      renderGrid();
+      updateStats();
+    } else {
+      window._firebaseDataReady = true;
+      maybeShowApp();
+    }
   }, (err) => {
-    console.error('Firebase error:', err);
+    console.error('[Firebase] error:', err);
     updateSyncStatus('error');
   });
 
@@ -1086,7 +1101,8 @@ async function loadPokemonData() {
   }
 
   loadProg.textContent = 'Alle 1025 Pokémon bereit!';
-  setTimeout(() => showApp(), 300);
+  window._pokemonDataReady = true;
+  maybeShowApp();
 }
 
 function getPokemonEnName(id) {
@@ -1094,7 +1110,15 @@ function getPokemonEnName(id) {
   return names[id] || 'Pokemon ' + id;
 }
 
+function maybeShowApp() {
+  if (window._pokemonDataReady && window._firebaseDataReady) {
+    showApp();
+  }
+}
+
 function showApp() {
+  if (window._appShown) return;
+  window._appShown = true;
   document.getElementById('loading').style.display = 'none';
   document.getElementById('grid').style.display = 'grid';
   renderGrid();
@@ -1106,6 +1130,13 @@ buildTabs();
 loadPokemonData();
 initFirebase();
 loadView();
+// Fallback: wenn Firebase nach 5s noch nicht geantwortet hat, App trotzdem zeigen
+setTimeout(() => {
+  if (!window._appShown && window._pokemonDataReady) {
+    window._firebaseDataReady = true;
+    maybeShowApp();
+  }
+}, 5000);
 
 
 

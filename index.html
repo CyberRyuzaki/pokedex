@@ -1357,6 +1357,46 @@ const SETS_META = [
 const WORKER_URL_SET = 'https://black-rain-73e9.dennis-guelden.workers.dev';
 
 // Populate set dropdown
+// Cache für Set-Karten (name→pokemonNames)
+const setCardCache = {};
+
+function getSetPokemonCount(cards) {
+  // Nur echte Pokemon-Karten (keine Trainer/Energie)
+  return cards.filter(c => c.supertype === 'Pokémon').length;
+}
+
+function getSetCaughtCount(cards) {
+  // Wie viele Pokemon aus diesem Set hat der User gefangen
+  // Vergleich über normalisierten Namen mit caught-IDs
+  const pokemonCards = cards.filter(c => c.supertype === 'Pokémon');
+  if (!allPokemon.length) return 0;
+  let count = 0;
+  for (const card of pokemonCards) {
+    const cardNameLower = card.name.toLowerCase().replace(/[^a-z]/g, '');
+    const found = allPokemon.find(p => {
+      const pNameLower = p.name.toLowerCase().replace(/[^a-z]/g, '');
+      return cardNameLower.startsWith(pNameLower) || pNameLower === cardNameLower;
+    });
+    if (found && caught.has(found.id)) count++;
+  }
+  return count;
+}
+
+function updateSetDropdownPercents() {
+  const sel = document.getElementById('filter-set');
+  for (const opt of sel.options) {
+    if (!opt.value) continue;
+    const cards = setCardCache[opt.value];
+    if (!cards) continue;
+    const total = getSetPokemonCount(cards);
+    if (total === 0) continue;
+    const got = getSetCaughtCount(cards);
+    const pct = Math.round(got / total * 100);
+    const meta = SETS_META.find(s => s[0] === opt.value);
+    opt.textContent = `${meta[1]} (${meta[2]}) — ${pct}% (${got}/${total})`;
+  }
+}
+
 function initSetSelect() {
   const sel = document.getElementById('filter-set');
   SETS_META.forEach(([id, name, year]) => {
@@ -1392,11 +1432,44 @@ async function onSetFilterChange() {
     const cards = await res.json();
     setTitle.textContent = `📦 ${meta ? meta[1] + ' (' + meta[2] + ')' : setId} — ${cards.length} Karten`;
     setGrid.innerHTML = '';
+    // Cache für % Berechnung
+    setCardCache[setId] = cards;
+    updateSetDropdownPercents();
+
+    // Pokemon-count nur aus Pokemon-Karten
+    const pokemonCards = cards.filter(c => c.supertype === 'Pokémon');
+    const totalPoke = pokemonCards.length;
+    let caughtPoke = 0;
+    if (allPokemon) {
+      for (const card of pokemonCards) {
+        const cardNameLower = card.name.toLowerCase().replace(/[^a-z]/g,'');
+        const found = allPokemon.find(p => {
+          const pn = p.name.toLowerCase().replace(/[^a-z]/g,'');
+          return cardNameLower.startsWith(pn) || pn === cardNameLower;
+        });
+        if (found && caught.has(found.id)) caughtPoke++;
+      }
+    }
+    const pct = totalPoke > 0 ? Math.round(caughtPoke/totalPoke*100) : 0;
+    setTitle.textContent = `📦 ${meta ? meta[1] + ' (' + meta[2] + ')' : setId} — ${cards.length} Karten · ${pct}% gefangen (${caughtPoke}/${totalPoke} Pokémon)`;
+
     cards.forEach(card => {
       const imgUrl = (card.images && card.images.small) || `https://images.pokemontcg.io/${setId}/${card.number}.png`;
       const imgLarge = (card.images && card.images.large) || `https://images.pokemontcg.io/${setId}/${card.number}_hires.png`;
+
+      // Ist dieses Pokemon gefangen?
+      let isCaught = false;
+      if (card.supertype === 'Pokémon' && allPokemon) {
+        const cardNameLower = card.name.toLowerCase().replace(/[^a-z]/g,'');
+        const found = allPokemon.find(p => {
+          const pn = p.name.toLowerCase().replace(/[^a-z]/g,'');
+          return cardNameLower.startsWith(pn) || pn === cardNameLower;
+        });
+        if (found && caught.has(found.id)) isCaught = true;
+      }
+
       const el = document.createElement('div');
-      el.style.cssText = 'cursor:pointer;border-radius:8px;overflow:hidden;background:var(--card);transition:transform 0.2s';
+      el.style.cssText = 'cursor:pointer;border-radius:8px;overflow:hidden;background:var(--card);transition:transform 0.2s;position:relative';
       el.onmouseenter = () => el.style.transform = 'scale(1.04)';
       el.onmouseleave = () => el.style.transform = '';
       el.onclick = () => openCardLightbox(imgLarge, card.name, meta ? meta[1] : setId, card.number);
@@ -1407,6 +1480,7 @@ async function onSetFilterChange() {
                style="width:100%;display:block;border-radius:8px;position:relative;z-index:1;opacity:0;transition:opacity 0.3s"
                onload="this.style.opacity=1;this.previousElementSibling.style.display='none'"
                onerror="this.previousElementSibling.innerHTML='🃏';this.remove()">
+          ${isCaught ? '<div style="position:absolute;top:4px;right:4px;font-size:14px;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.8))">⚾</div>' : ''}
         </div>
         <div style="font-size:10px;color:var(--text-muted);padding:3px 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${card.name}</div>
       `;

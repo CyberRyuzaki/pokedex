@@ -939,6 +939,9 @@ function connectUserData(db, ref, set, onValue, key, name) {
   document.getElementById('user-display').textContent = `👤 ${name}`;
   document.getElementById('user-display').style.display = 'inline-block';
 
+  // _firebaseSet MUSS vor onValue definiert sein
+  window._firebaseSet = (data) => set(dbRef, data);
+
   onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
     console.log('[Firebase] onValue key=' + key + ' data=', data);
@@ -946,11 +949,11 @@ function connectUserData(db, ref, set, onValue, key, name) {
       // Firebase hat Daten → übernehmen
       caught = new Set(data);
       localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
-    } else if (data === null) {
+    } else {
       // Firebase leer → lokale Daten hochladen falls vorhanden
       const local = JSON.parse(localStorage.getItem('pokedex_caught_v1') || '[]');
       caught = new Set(local);
-      if (local.length > 0 && window._firebaseSet) {
+      if (local.length > 0) {
         console.log('[Firebase] uploading local data:', local.length, 'pokemon');
         window._firebaseSet(local);
       }
@@ -968,8 +971,6 @@ function connectUserData(db, ref, set, onValue, key, name) {
     console.error('[Firebase] error:', err);
     updateSyncStatus('error');
   });
-
-  window._firebaseSet = (data) => set(dbRef, data);
 }
 
 function updateStats() {

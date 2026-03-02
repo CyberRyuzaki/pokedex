@@ -910,6 +910,17 @@ function showLoginModal(db, ref, set, onValue) {
     if (!/^\d{4}$/.test(pin)) { err.textContent = 'PIN muss genau 4 Ziffern haben.'; return; }
     err.textContent = '';
     const key = await makeProfileKey(name, pin);
+    // Check if name is already taken by a different key
+    const { get } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+    const nameCheckRef = ref(db, `pokedex/names/${name.toLowerCase().trim()}`);
+    const nameSnap = await get(nameCheckRef);
+    const existingKey = nameSnap.val();
+    if (existingKey && existingKey !== key) {
+      err.textContent = 'Name bereits vergeben – anderen Namen oder richtigen PIN wählen.';
+      return;
+    }
+    // Register name→key mapping
+    await set(ref(db, `pokedex/names/${name.toLowerCase().trim()}`), key);
     localStorage.setItem('pokedex_profile', JSON.stringify({ key, name }));
     modal.style.display = 'none';
     connectUserData(db, ref, set, onValue, key, name);
@@ -926,13 +937,11 @@ function connectUserData(db, ref, set, onValue, key, name) {
 
   onValue(dbRef, (snapshot) => {
     const data = snapshot.val();
-    if (data && Array.isArray(data)) {
-      caught = new Set(data);
-      localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
-      if (document.getElementById('grid').style.display !== 'none') {
-        renderGrid();
-        updateStats();
-      }
+    caught = new Set(data && Array.isArray(data) ? data : []);
+    localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
+    if (document.getElementById('grid').style.display !== 'none') {
+      renderGrid();
+      updateStats();
     }
     firebaseReady = true;
     updateSyncStatus('online');
@@ -1093,7 +1102,6 @@ function showApp() {
 }
 
 // Init
-loadCaught();
 buildTabs();
 loadPokemonData();
 initFirebase();
@@ -1306,6 +1314,8 @@ const SETS_META = [
   ["sv4pt5","Paldean Fates","2024"],["sv5","Temporal Forces","2024"],["sv6","Twilight Masquerade","2024"],
   ["sv6pt5","Shrouded Fable","2024"],["sv7","Stellar Crown","2024"],["sv8","Surging Sparks","2024"],
   ["sv8pt5","Prismatic Evolutions","2025"],["sv9","Journey Together","2025"],["sv10","Destined Rivals","2025"],
+  ["zsv10pt5","Black Bolt","2025"],["rsv10pt5","White Flare","2025"],
+  ["me1","Mega Evolution","2025"],["me2","Phantasmal Flames","2025"],["me2pt5","Ascended Heroes","2026"],
 ];
 
 const WORKER_URL_SET = 'https://black-rain-73e9.dennis-guelden.workers.dev';
@@ -1341,7 +1351,7 @@ async function onSetFilterChange() {
   setGrid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Lade Karten...</div>';
 
   try {
-    const res = await fetch(`https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/cards/en/${setId}.json`);
+    const res = await fetch(`https://black-rain-73e9.dennis-guelden.workers.dev/set?id=${setId}`);
     if (!res.ok) throw new Error('Set nicht gefunden');
     const cards = await res.json();
     setTitle.textContent = `📦 ${meta ? meta[1] + ' (' + meta[2] + ')' : setId} — ${cards.length} Karten`;

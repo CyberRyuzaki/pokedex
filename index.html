@@ -1372,16 +1372,30 @@ const setCardCache = {};
 function cardNameToPokeId(cardName) {
   if (!window._enNameMap) return null;
   const raw = cardName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // 1) Exact match
   if (window._enNameMap.has(raw)) return window._enNameMap.get(raw);
+
+  // 2) Strip TCG suffixes (ex, VMAX, GX …)
   for (const sfx of ['vstar','vmax','gmax','ex','gx','vunion','prime','break','legend','delta','radiant','tera']) {
     if (raw.endsWith(sfx)) {
       const base = raw.slice(0, raw.length - sfx.length);
       if (window._enNameMap.has(base)) return window._enNameMap.get(base);
     }
   }
+
+  // 3) Trainer-prefix cards like "Erika's Oddish", "Team Rocket's Charizard"
+  //    → find any pokemon name that is contained in raw
+  //    Use longest match to avoid "mew" matching "mewtwo"
+  let bestId = null, bestLen = 0;
   for (const [en, id] of window._enNameMap) {
-    if (raw.length > en.length && raw.startsWith(en)) return id;
+    if (en.length > bestLen && raw.includes(en)) {
+      bestId = id;
+      bestLen = en.length;
+    }
   }
+  if (bestId !== null) return bestId;
+
   return null;
 }
 
@@ -1459,11 +1473,11 @@ async function onSetFilterChange() {
     const visibleCards = (currentGen === 0) ? [...cards] : cards.filter(card => {
       if (card.supertype !== 'Pokémon') return true;
       const id = cardNameToPokeId(card.name);
-      if (!id) return true;
+      if (!id) return false; // unbekannte Pokemon rausfiltern wenn Gen aktiv
       return id >= genFilter.min && id <= genFilter.max;
     });
 
-    // Sortierung nach Kartennummer (Buchstaben ans Ende)
+    // Sortierung nach Kartennummer
     visibleCards.sort((a, b) => {
       const na = parseInt((a.number || '').replace(/[^0-9]/g, '') || '9999');
       const nb = parseInt((b.number || '').replace(/[^0-9]/g, '') || '9999');
@@ -1471,7 +1485,7 @@ async function onSetFilterChange() {
       return (a.number || '').localeCompare(b.number || '');
     });
 
-    // % auf gesamtes Set berechnen (ungefiltert)
+    // % immer auf gesamtes Set
     const pokemonCards = cards.filter(c => c.supertype === 'Pokémon');
     const totalPoke = pokemonCards.length;
     let caughtPoke = 0;

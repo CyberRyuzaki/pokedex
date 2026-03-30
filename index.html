@@ -1,250 +1,1603 @@
-const ALLOWED_ORIGIN = '*';
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PokédexDEX">
+  <meta name="theme-color" content="#0d0d1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokédex Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;900&display=swap');
 
-const SETS = [
-  ["base1","Base","1999/01/09"],["base2","Jungle","1999/06/16"],["basep","Wizards Black Star Promos","1999/07/01"],
-  ["base3","Fossil","1999/10/10"],["base4","Base Set 2","2000/02/24"],["base5","Team Rocket","2000/04/24"],
-  ["gym1","Gym Heroes","2000/08/14"],["gym2","Gym Challenge","2000/10/16"],["neo1","Neo Genesis","2000/12/16"],
-  ["neo2","Neo Discovery","2001/06/01"],["si1","Southern Islands","2001/07/31"],["neo3","Neo Revelation","2001/09/21"],
-  ["neo4","Neo Destiny","2002/02/28"],["base6","Legendary Collection","2002/05/24"],
-  ["ecard1","Expedition Base Set","2002/09/15"],["ecard2","Aquapolis","2003/01/15"],["ecard3","Skyridge","2003/05/12"],
-  ["ex1","Ruby & Sapphire","2003/07/01"],["ex2","Sandstorm","2003/09/18"],["ex3","Dragon","2003/11/24"],
-  ["np","Nintendo Black Star Promos","2003/10/01"],["ex4","Team Magma vs Team Aqua","2004/03/01"],
-  ["tk1a","EX Trainer Kit Latias","2004/06/01"],["tk1b","EX Trainer Kit Latios","2004/06/01"],
-  ["ex5","Hidden Legends","2004/06/01"],["ex6","FireRed & LeafGreen","2004/09/01"],
-  ["pop1","POP Series 1","2004/09/01"],["ex7","Team Rocket Returns","2004/11/01"],
-  ["ex8","Deoxys","2005/02/01"],["ex9","Emerald","2005/05/01"],["ex10","Unseen Forces","2005/08/01"],
-  ["pop2","POP Series 2","2005/08/01"],["ex11","Delta Species","2005/10/31"],
-  ["ex12","Legend Maker","2006/02/01"],["tk2a","EX Trainer Kit 2 Plusle","2006/03/01"],
-  ["tk2b","EX Trainer Kit 2 Minun","2006/03/01"],["pop3","POP Series 3","2006/04/01"],
-  ["ex13","Holon Phantoms","2006/05/01"],["ex14","Crystal Guardians","2006/08/01"],
-  ["pop4","POP Series 4","2006/08/01"],["ex15","Dragon Frontiers","2006/11/01"],
-  ["pop5","POP Series 5","2007/03/01"],["ex16","Power Keepers","2007/02/02"],
-  ["dp1","Diamond & Pearl","2007/05/01"],["dpp","DP Black Star Promos","2007/05/01"],
-  ["dp2","Mysterious Treasures","2007/08/01"],["pop6","POP Series 6","2007/09/01"],
-  ["dp3","Secret Wonders","2007/11/01"],["dp4","Great Encounters","2008/02/01"],
-  ["pop7","POP Series 7","2008/03/01"],["dp5","Majestic Dawn","2008/05/01"],
-  ["dp6","Legends Awakened","2008/08/01"],["pop8","POP Series 8","2008/09/01"],
-  ["dp7","Stormfront","2008/11/01"],["pl1","Platinum","2009/02/11"],
-  ["pop9","POP Series 9","2009/03/01"],["pl2","Rising Rivals","2009/05/16"],
-  ["pl3","Supreme Victors","2009/08/19"],["pl4","Arceus","2009/11/04"],
-  ["ru1","Pokémon Rumble","2009/12/02"],["hgss1","HeartGold & SoulSilver","2010/02/10"],
-  ["hsp","HGSS Black Star Promos","2010/02/10"],["hgss2","HS—Unleashed","2010/05/12"],
-  ["hgss3","HS—Undaunted","2010/08/18"],["hgss4","HS—Triumphant","2010/11/03"],
-  ["col1","Call of Legends","2011/02/09"],["bwp","BW Black Star Promos","2011/03/01"],
-  ["bw1","Black & White","2011/04/25"],["mcd11","McDonald's Collection 2011","2011/06/17"],
-  ["bw2","Emerging Powers","2011/08/31"],["bw3","Noble Victories","2011/11/16"],
-  ["bw4","Next Destinies","2012/02/08"],["bw5","Dark Explorers","2012/05/09"],
-  ["mcd12","McDonald's Collection 2012","2012/06/15"],["bw6","Dragons Exalted","2012/08/15"],
-  ["dv1","Dragon Vault","2012/10/05"],["bw7","Boundaries Crossed","2012/11/07"],
-  ["bw8","Plasma Storm","2013/02/06"],["bw9","Plasma Freeze","2013/05/08"],
-  ["bw10","Plasma Blast","2013/08/14"],["xyp","XY Black Star Promos","2013/10/12"],
-  ["bw11","Legendary Treasures","2013/11/06"],["xy0","Kalos Starter Set","2013/11/08"],
-  ["xy1","XY","2014/02/05"],["xy2","Flashfire","2014/05/07"],
-  ["mcd14","McDonald's Collection 2014","2014/05/23"],["xy3","Furious Fists","2014/08/13"],
-  ["xy4","Phantom Forces","2014/11/05"],["xy5","Primal Clash","2015/02/04"],
-  ["dc1","Double Crisis","2015/03/25"],["xy6","Roaring Skies","2015/05/06"],
-  ["xy7","Ancient Origins","2015/08/12"],["xy8","BREAKthrough","2015/11/04"],
-  ["mcd15","McDonald's Collection 2015","2015/11/27"],["xy9","BREAKpoint","2016/02/03"],
-  ["g1","Generations","2016/02/22"],["xy10","Fates Collide","2016/05/02"],
-  ["xy11","Steam Siege","2016/08/03"],["mcd16","McDonald's Collection 2016","2016/08/19"],
-  ["xy12","Evolutions","2016/11/02"],["sm1","Sun & Moon","2017/02/03"],
-  ["smp","SM Black Star Promos","2017/02/03"],["sm2","Guardians Rising","2017/05/05"],
-  ["sm3","Burning Shadows","2017/08/05"],["sm35","Shining Legends","2017/10/06"],
-  ["sm4","Crimson Invasion","2017/11/03"],["mcd17","McDonald's Collection 2017","2017/11/07"],
-  ["sm5","Ultra Prism","2018/02/02"],["sm6","Forbidden Light","2018/05/04"],
-  ["sm7","Celestial Storm","2018/08/03"],["sm75","Dragon Majesty","2018/09/07"],
-  ["mcd18","McDonald's Collection 2018","2018/10/16"],["sm8","Lost Thunder","2018/11/02"],
-  ["sm9","Team Up","2019/02/01"],["det1","Detective Pikachu","2019/04/05"],
-  ["sm10","Unbroken Bonds","2019/05/03"],["sm11","Unified Minds","2019/08/02"],
-  ["sm115","Hidden Fates","2019/08/23"],["sma","Hidden Fates Shiny Vault","2019/08/23"],
-  ["mcd19","McDonald's Collection 2019","2019/10/15"],["sm12","Cosmic Eclipse","2019/11/01"],
-  ["swshp","SWSH Black Star Promos","2019/11/15"],["swsh1","Sword & Shield","2020/02/07"],
-  ["swsh2","Rebel Clash","2020/05/01"],["swsh3","Darkness Ablaze","2020/08/14"],
-  ["fut20","Pokémon Futsal Collection","2020/09/11"],["swsh35","Champion's Path","2020/09/25"],
-  ["swsh4","Vivid Voltage","2020/11/13"],["swsh45","Shining Fates","2021/02/19"],
-  ["swsh45sv","Shining Fates Shiny Vault","2021/02/19"],["mcd21","McDonald's Collection 2021","2021/02/09"],
-  ["swsh5","Battle Styles","2021/03/19"],["swsh6","Chilling Reign","2021/06/18"],
-  ["swsh7","Evolving Skies","2021/08/27"],["cel25","Celebrations","2021/10/08"],
-  ["cel25c","Celebrations: Classic Collection","2021/10/08"],["swsh8","Fusion Strike","2021/11/12"],
-  ["swsh9","Brilliant Stars","2022/02/25"],["swsh9tg","Brilliant Stars Trainer Gallery","2022/02/25"],
-  ["swsh10","Astral Radiance","2022/05/27"],["swsh10tg","Astral Radiance Trainer Gallery","2022/05/27"],
-  ["pgo","Pokémon GO","2022/07/01"],["mcd22","McDonald's Collection 2022","2022/08/03"],
-  ["swsh11","Lost Origin","2022/09/09"],["swsh11tg","Lost Origin Trainer Gallery","2022/09/09"],
-  ["swsh12","Silver Tempest","2022/11/11"],["swsh12tg","Silver Tempest Trainer Gallery","2022/11/11"],
-  ["swsh12pt5","Crown Zenith","2023/01/20"],["swsh12pt5gg","Crown Zenith Galarian Gallery","2023/01/20"],
-  ["svp","Scarlet & Violet Black Star Promos","2023/01/01"],["sve","Scarlet & Violet Energies","2023/03/31"],
-  ["sv1","Scarlet & Violet","2023/03/31"],["sv2","Paldea Evolved","2023/06/09"],
-  ["sv3","Obsidian Flames","2023/08/11"],["sv3pt5","151","2023/09/22"],
-  ["sv4","Paradox Rift","2023/11/03"],["sv4pt5","Paldean Fates","2024/01/26"],
-  ["sv5","Temporal Forces","2024/03/22"],["sv6","Twilight Masquerade","2024/05/24"],
-  ["sv6pt5","Shrouded Fable","2024/08/02"],["sv7","Stellar Crown","2024/09/13"],
-  ["sv8","Surging Sparks","2024/11/08"],["sv8pt5","Prismatic Evolutions","2025/01/17"],
-  ["sv9","Journey Together","2025/03/28"],["sv10","Destined Rivals","2025/05/30"],
-  ["zsv10pt5","Black Bolt","2025/07/18"],["rsv10pt5","White Flare","2025/07/18"],
-  ["me1","Mega Evolution","2025/09/26"],["me2","Phantasmal Flames","2025/11/14"],
-  ["me2pt5","Ascended Heroes","2026/01/30"]
+  :root {
+    --bg: #0d0d1a;
+    --card-bg: #16162a;
+    --card-hover: #1e1e38;
+    --accent: #e63946;
+    --gold: #ffd700;
+    --text: #e8e8f0;
+    --text-muted: #7878a0;
+    --border: #2a2a4a;
+    --caught-glow: rgba(255,215,0,0.15);
+    --normal: #A8A878; --fire: #F08030; --water: #6890F0;
+    --electric: #F8D030; --grass: #78C850; --ice: #98D8D8;
+    --fighting: #C03028; --poison: #A040A0; --ground: #E0C068;
+    --flying: #A890F0; --psychic: #F85888; --bug: #A8B820;
+    --rock: #B8A038; --ghost: #705898; --dragon: #7038F8;
+    --dark: #705848; --steel: #B8B8D0; --fairy: #EE99AC;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a0a2e 0%, #16162a 50%, #0d1a2e 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 30px rgba(230,57,70,0.3);
+  }
+
+  .header-inner {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,215,0,0.5), 2px 2px 0 var(--accent);
+    white-space: nowrap;
+    letter-spacing: 1px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  #filter-toggle {
+    display: none;
+    margin: 6px auto 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #filter-toggle:hover { background: var(--border); color: var(--text); }
+  #controls-panel {
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    max-height: 300px;
+    opacity: 1;
+  }
+  #controls-panel.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  @media (max-width: 600px) {
+    #filter-toggle { display: block; }
+  }
+
+  .progress-section {
+    flex: 1;
+    min-width: 250px;
+  }
+
+  .progress-stats {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .stat-big {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 22px;
+    color: var(--gold);
+  }
+
+  .stat-label {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .progress-bar-wrap {
+    background: var(--border);
+    border-radius: 10px;
+    height: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(255,215,0,0.4);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  input[type="text"] {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--text-muted); }
+
+  select {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 8px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:hover { background: #ff4d5a; transform: translateY(-1px); }
+  .btn.secondary { background: var(--card-hover); border: 1.5px solid var(--border); }
+  .btn.secondary:hover { border-color: var(--accent); }
+
+  .generation-tabs {
+    max-width: 1600px;
+    margin: 16px auto 0;
+    padding: 0 16px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .gen-tab {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .gen-tab:hover, .gen-tab.active {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--card-hover);
+  }
+
+  .grid-container {
+    max-width: 1600px;
+    margin: 20px auto;
+    padding: 0 16px 60px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* overridden by data-cols */
+    gap: 10px;
+  }
+
+  .poke-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 8px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    text-align: center;
+    user-select: none;
+  }
+
+  .poke-card:hover {
+    border-color: #4444aa;
+    background: var(--card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+
+  .poke-card.caught {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, var(--card-bg), #1a1a10);
+    box-shadow: 0 0 12px var(--caught-glow), inset 0 0 20px rgba(255,215,0,0.05);
+  }
+
+  .poke-card.caught:hover {
+    box-shadow: 0 6px 20px rgba(255,215,0,0.3), inset 0 0 20px rgba(255,215,0,0.08);
+  }
+
+  .caught-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .poke-card.caught .caught-badge { opacity: 1; }
+
+  .poke-num {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-family: 'Press Start 2P', monospace;
+  }
+
+  .poke-img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    transition: transform 0.2s;
+  }
+
+  .poke-card.caught .poke-img { filter: drop-shadow(0 0 6px rgba(255,215,0,0.4)); }
+  .poke-card:hover .poke-img { transform: scale(1.08); }
+
+  .poke-img.not-caught {
+    filter: brightness(0) opacity(0.3);
+  }
+
+  .poke-name-de {
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--text);
+    margin-top: 4px;
+    line-height: 1.2;
+  }
+
+  .poke-name-en {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .type-badges {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+
+  .type-badge {
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 20px;
+  }
+
+  .loading-pokeball {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #e63946 50%, white 50%);
+    border: 3px solid #333;
+    position: relative;
+    animation: spin 1s linear infinite;
+  }
+
+  .loading-pokeball::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    border: 3px solid #333;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: var(--gold);
+    text-align: center;
+  }
+
+  .loading-progress {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .no-results {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 16px;
+  }
+
+
+
+
+  /* TCG Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: linear-gradient(135deg, #1e1e38, #16162a);
+    border: 1.5px solid var(--gold);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255,215,0,0.1);
+    animation: modalIn 0.25s ease;
+  }
+  @keyframes modalIn { from { transform: scale(0.92); opacity:0; } to { transform: scale(1); opacity:1; } }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: #1e1e38;
+    border-radius: 16px 16px 0 0;
+  }
+  .modal-header img { width: 52px; height: 52px; object-fit: contain; }
+  .modal-header-info { flex: 1; }
+  .modal-header-name { font-size: 18px; font-weight: 900; color: var(--text); }
+  .modal-header-sub { font-size: 12px; color: var(--text-muted); }
+  .modal-close {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 22px; cursor: pointer; padding: 4px; line-height: 1;
+    transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--accent); }
+
+  .modal-body { padding: 16px 20px; }
+
+  .modal-loading {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .modal-loading .spin {
+    display: inline-block;
+    width: 30px; height: 30px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+
+  .tcg-set-group { margin-bottom: 20px; }
+  .tcg-set-title {
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tcg-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+
+  .card-img-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 0.715;
+    overflow: hidden;
+  }
+  .card-img-wrap img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .card-img-skeleton {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--border) 25%, #2a2a4a 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .tcg-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .tcg-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255,215,0,0.2);
+  }
+  .tcg-card img {
+    width: 100%;
+    aspect-ratio: 0.715;
+    object-fit: cover;
+    display: block;
+  }
+  .tcg-card-name {
+    font-size: 9px;
+    color: var(--text-muted);
+    padding: 4px 3px;
+    line-height: 1.2;
+  }
+  .tcg-empty {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .tcg-error {
+    text-align: center;
+    padding: 20px;
+    color: var(--accent);
+    font-size: 13px;
+  }
+  .modal-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  /* ? Button on card */
+  .tcg-btn {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255,215,0,0.15);
+    border: 1px solid rgba(255,215,0,0.4);
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 2;
+    font-family: 'Nunito', sans-serif;
+    line-height: 1;
+  }
+  .tcg-btn:hover {
+    background: var(--gold);
+    color: #333;
+    transform: scale(1.15);
+  }
+
+  /* PWA Install Banner */
+  #install-banner {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #1e1e38, #16162a);
+    border: 1.5px solid var(--gold);
+    border-radius: 14px;
+    padding: 14px 20px;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(255,215,0,0.15);
+    max-width: 340px;
+    width: calc(100vw - 40px);
+    animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp { from { transform: translateX(-50%) translateY(20px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
+  #install-banner .banner-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  #install-banner .banner-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  #install-banner .banner-steps {
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 12px;
+    line-height: 1.8;
+  }
+  #install-banner .banner-close {
+    position: absolute;
+    top: 10px; right: 12px;
+    background: none; border: none;
+    color: var(--text-muted); font-size: 18px;
+    cursor: pointer; line-height: 1;
+  }
+  #install-banner .banner-close:hover { color: var(--text); }
+
+  /* View toggle buttons */
+  .view-toggle {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .view-btn {
+    background: none;
+    border: none;
+    border-radius: 5px;
+    color: var(--text-muted);
+    padding: 4px 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .view-btn:hover { color: var(--text); background: var(--card-hover); }
+  .view-btn.active { background: var(--accent); color: white; }
+
+  /* Dynamic grid columns via CSS vars */
+  .grid-container { --cols: 140px; }
+  .grid-container[data-cols="1"] { grid-template-columns: 1fr; }
+  .grid-container[data-cols="2"] { grid-template-columns: repeat(2, 1fr); }
+  .grid-container[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
+  .grid-container[data-cols="4"] { grid-template-columns: repeat(4, 1fr); }
+  .grid-container[data-cols="5"] { grid-template-columns: repeat(5, 1fr); }
+  .grid-container[data-cols="auto"] { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+
+  /* Compact card for small columns */
+  .grid-container[data-cols="4"] .poke-img,
+  .grid-container[data-cols="5"] .poke-img { width: 56px; height: 56px; }
+  .grid-container[data-cols="4"] .poke-name-de,
+  .grid-container[data-cols="5"] .poke-name-de { font-size: 10px; }
+  .grid-container[data-cols="4"] .poke-name-en,
+  .grid-container[data-cols="5"] .poke-name-en { display: none; }
+  .grid-container[data-cols="5"] .type-badges { display: none; }
+  .grid-container[data-cols="1"] .poke-card { display: flex; align-items: center; gap: 16px; text-align: left; padding: 10px 16px; }
+  .grid-container[data-cols="1"] .poke-img { width: 64px; height: 64px; }
+  .grid-container[data-cols="1"] .poke-num { margin-bottom: 0; }
+  .grid-container[data-cols="1"] .type-badges { justify-content: flex-start; }
+  .grid-container[data-cols="1"] .caught-badge { top: 50%; transform: translateY(-50%); }
+
+  /* Type colors */
+  .t-normal { background: var(--normal); color: #333; }
+  .t-fire { background: var(--fire); color: white; }
+  .t-water { background: var(--water); color: white; }
+  .t-electric { background: var(--electric); color: #333; }
+  .t-grass { background: var(--grass); color: white; }
+  .t-ice { background: var(--ice); color: #333; }
+  .t-fighting { background: var(--fighting); color: white; }
+  .t-poison { background: var(--poison); color: white; }
+  .t-ground { background: var(--ground); color: #333; }
+  .t-flying { background: var(--flying); color: white; }
+  .t-psychic { background: var(--psychic); color: white; }
+  .t-bug { background: var(--bug); color: white; }
+  .t-rock { background: var(--rock); color: white; }
+  .t-ghost { background: var(--ghost); color: white; }
+  .t-dragon { background: var(--dragon); color: white; }
+  .t-dark { background: var(--dark); color: white; }
+  .t-steel { background: var(--steel); color: #333; }
+  .t-fairy { background: var(--fairy); color: white; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%"><div class="logo">Pokémon<span>DEX</span></div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <span id="user-display" onclick="showUserMenu()" style="display:none;font-size:13px;font-weight:700;color:var(--accent);cursor:pointer;background:var(--card);padding:4px 10px;border-radius:20px;border:1px solid var(--border)"></span>
+      <span id="sync-status" style="font-size:11px;color:var(--text-muted)"></span>
+    </div>
+    <div class="progress-section">
+      <div class="progress-stats">
+        <div>
+          <div class="stat-big" id="caught-count">0</div>
+          <div class="stat-label">gefangen</div>
+        </div>
+        <div>
+          <div class="stat-big" id="total-count">1025</div>
+          <div class="stat-label">gesamt</div>
+        </div>
+        <div>
+          <div class="stat-big" id="percent-count">0%</div>
+          <div class="stat-label">vollständig</div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+      </div>
+      <button id="filter-toggle" onclick="toggleFilters()" aria-label="Filter ein-/ausklappen">
+        <span id="filter-toggle-icon">▲</span> Filter
+      </button>
+    </div>
+    <div class="controls" id="controls-panel">
+      <input type="text" id="search" placeholder="🔍 Suche Pokémon...">
+      <select id="filter-caught">
+        <option value="all">Alle anzeigen</option>
+        <option value="caught">Nur gefangen</option>
+        <option value="missing">Fehlende</option>
+      </select>
+      <select id="filter-type">
+        <option value="">Alle Typen</option>
+        <option value="normal">Normal</option>
+        <option value="fire">Feuer</option>
+        <option value="water">Wasser</option>
+        <option value="electric">Elektro</option>
+        <option value="grass">Pflanze</option>
+        <option value="ice">Eis</option>
+        <option value="fighting">Kampf</option>
+        <option value="poison">Gift</option>
+        <option value="ground">Boden</option>
+        <option value="flying">Flug</option>
+        <option value="psychic">Psycho</option>
+        <option value="bug">Käfer</option>
+        <option value="rock">Gestein</option>
+        <option value="ghost">Geist</option>
+        <option value="dragon">Drache</option>
+        <option value="dark">Unlicht</option>
+        <option value="steel">Stahl</option>
+        <option value="fairy">Fee</option>
+      </select>
+      <div class="view-toggle" title="Spalten pro Reihe">
+        <button class="view-btn" onclick="setView(1)" data-v="1">1</button>
+        <button class="view-btn" onclick="setView(2)" data-v="2">2</button>
+        <button class="view-btn" onclick="setView(3)" data-v="3">3</button>
+        <button class="view-btn" onclick="setView(4)" data-v="4">4</button>
+        <button class="view-btn" onclick="setView(5)" data-v="5">5</button>
+        <button class="view-btn active" onclick="setView('auto')" data-v="auto">Auto</button>
+      </div>
+      <select id="filter-set" onchange="onSetFilterChange()">
+        <option value="">📦 Set-Ansicht...</option>
+      </select>
+      <button class="btn secondary" onclick="resetAll()">Reset</button>
+      <div class="generation-tabs" id="gen-tabs" style="padding:0;margin:4px 0 0 0;max-width:100%;flex-basis:100%"></div>
+    </div>
+  </div>
+
+  <div id="firebase-hint" style="display:none; background:#1a1a10; border:1.5px solid var(--gold); border-radius:8px; padding:12px 16px; margin-top:10px; max-width:1600px; margin-left:auto; margin-right:auto;">
+    <b style="color:var(--gold)">⚙️ Firebase Konfiguration erforderlich für Sync</b><br>
+    <span style="color:var(--text-muted); font-size:13px;">
+      1. Geh zu <a href="https://console.firebase.google.com" target="_blank" style="color:#4fc3f7">console.firebase.google.com</a> → Neues Projekt<br>
+      2. "Realtime Database" erstellen → Testmodus → Region: europe-west1<br>
+      3. Projekteinstellungen → Deine Web-App → Config kopieren<br>
+      4. In der HTML-Datei <code style="background:#2a2a4a;padding:2px 6px;border-radius:4px">FIREBASE_CONFIG</code> mit deinen Werten ausfüllen
+    </span>
+  </div>
+</header>
+
+<div id="loading" class="loading-screen">
+  <div class="loading-pokeball"></div>
+  <div class="loading-text">Pokédex wird geladen...</div>
+  <div class="loading-progress" id="load-progress">Verbindung zur PokéAPI...</div>
+</div>
+
+<div class="grid-container" id="grid" style="display:none"></div>
+<div id="set-view" style="display:none;max-width:1600px;margin:20px auto;padding:0 16px">
+  <div id="set-view-title" style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:16px"></div>
+  <div id="set-view-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px"></div>
+</div>
+
+<script>
+// German Pokemon names mapping (all 1025)
+const germanNames = {
+  1:"Bisasam",2:"Bisaknosp",3:"Bisaflor",4:"Glumanda",5:"Glutexo",6:"Glurak",7:"Schiggy",8:"Schillok",9:"Turtok",10:"Raupy",11:"Safcon",12:"Smettbo",13:"Hornliu",14:"Kokuna",15:"Bibor",16:"Taubsi",17:"Tauboga",18:"Tauboss",19:"Rattfratz",20:"Rattikarl",21:"Habitak",22:"Ibitak",23:"Rettan",24:"Arbok",25:"Pikachu",26:"Raichu",27:"Sandan",28:"Sandamer",29:"Nidoran♀",30:"Nidorina",31:"Nidoqueen",32:"Nidoran♂",33:"Nidorino",34:"Nidoking",35:"Piepi",36:"Pixi",37:"Vulpix",38:"Vulnona",39:"Pummeluff",40:"Knuddeluff",41:"Zubat",42:"Golbat",43:"Myrapla",44:"Duflor",45:"Giflor",46:"Paras",47:"Parasek",48:"Bluzuk",49:"Omot",50:"Digda",51:"Digdri",52:"Mauzi",53:"Snobilikat",54:"Enton",55:"Entoron",56:"Menki",57:"Rasaff",58:"Fukano",59:"Arkani",60:"Quapsel",61:"Quaputzi",62:"Quappo",63:"Abra",64:"Kadabra",65:"Simsala",66:"Machollo",67:"Maschock",68:"Machomei",69:"Knofensa",70:"Ultrigaria",71:"Sarzenia",72:"Tentacha",73:"Tentoxa",74:"Kleinstein",75:"Georok",76:"Geowaz",77:"Ponita",78:"Gallopa",79:"Flegmon",80:"Lahmus",81:"Magnetilo",82:"Magneton",83:"Porenta",84:"Dodu",85:"Dodri",86:"Jurob",87:"Jugong",88:"Sleima",89:"Sleimok",90:"Muschas",91:"Austos",92:"Nebulak",93:"Alpollo",94:"Gengar",95:"Onix",96:"Traumato",97:"Hypno",98:"Krabby",99:"Kingler",100:"Voltobal",101:"Lektroball",102:"Owei",103:"Kokowei",104:"Tragosso",105:"Knogga",106:"Kicklee",107:"Nockchan",108:"Schlurp",109:"Smogon",110:"Smogmog",111:"Rihorn",112:"Rizeros",113:"Chaneira",114:"Tangela",115:"Kangama",116:"Seeper",117:"Seemon",118:"Goldini",119:"Golking",120:"Sterndu",121:"Starmie",122:"Pantimos",123:"Sichlor",124:"Rossana",125:"Elektek",126:"Magmar",127:"Pinsir",128:"Tauros",129:"Karpador",130:"Garados",131:"Lapras",132:"Ditto",133:"Evoli",134:"Aquana",135:"Blitza",136:"Flamara",137:"Porygon",138:"Amonitas",139:"Amoroso",140:"Kabuto",141:"Kabutops",142:"Aerodactyl",143:"Relaxo",144:"Arktos",145:"Zapdos",146:"Lavados",147:"Dratini",148:"Dragonir",149:"Dragoran",150:"Mewtu",151:"Mew",152:"Endivie",153:"Lorblatt",154:"Meganie",155:"Feurigel",156:"Igelavar",157:"Tornupto",158:"Karnimani",159:"Tyracroc",160:"Impergator",161:"Wiesor",162:"Wiesenior",163:"Hoothoot",164:"Noctuh",165:"Ledyba",166:"Ledian",167:"Spinarak",168:"Ariados",169:"Iksbat",170:"Lanturn",171:"Lanturn",172:"Pichu",173:"Pii",174:"Fluffeluff",175:"Togepi",176:"Togetic",177:"Natu",178:"Xatu",179:"Voltilamm",180:"Waaty",181:"Ampharos",182:"Blubberus",183:"Marill",184:"Azumarill",185:"Mogelbaum",186:"Quaxo",187:"Hoppspross",188:"Hubelupf",189:"Knospi",190:"Aipom",191:"Sonnkern",192:"Sonnflora",193:"Yanma",194:"Felino",195:"Morlord",196:"Psiana",197:"Nachtara",198:"Kramurx",199:"Lola",200:"Misdreavus",201:"Unown",202:"Woingenau",203:"Girafarig",204:"Pineco",205:"Forstellka",206:"Dunsparce",207:"Skorgla",208:"Stahlos",209:"Snubbull",210:"Granbull",211:"Corsola",212:"Scherox",213:"Leufeo",214:"Heracross",215:"Sneasel",216:"Teddiursa",217:"Ursaring",218:"Schneckmag",219:"Magcargo",220:"Quiekel",221:"Keifel",222:"Corasonn",223:"Remoraid",224:"Octillery",225:"Botogel",226:"Mantax",227:"Panzaeron",228:"Hunduster",229:"Hundemon",230:"Seedraking",231:"Phanpy",232:"Donphan",233:"Porygon2",234:"Damhirplex",235:"Farbeagle",236:"Rabauz",237:"Kapoera",238:"Kussilla",239:"Elekid",240:"Magby",241:"Miltank",242:"Heiteira",243:"Raikou",244:"Entei",245:"Suicune",246:"Larvitar",247:"Pupitar",248:"Despotar",249:"Lugia",250:"Ho-Oh",251:"Celebi",252:"Geckarbor",253:"Reptain",254:"Gewaldro",255:"Flemmli",256:"Jungglut",257:"Lohgock",258:"Hydropi",259:"Moorabbel",260:"Sumpex",261:"Poochyena",262:"Magnayen",263:"Zigzachs",264:"Geradaks",265:"Waumpel",266:"Schaloko",267:"Papinella",268:"Panekon",269:"Mottineva",270:"Loturzel",271:"Lotadel",272:"Lombrero",273:"Samurzel",274:"Nuzleaf",275:"Shiftry",276:"Schwalbini",277:"Schwalboss",278:"Wingull",279:"Pelipper",280:"Trasla",281:"Kirlia",282:"Guardevoir",283:"Waumboll",284:"Maskeregen",285:"Knilz",286:"Kapilz",287:"Bummelz",288:"Muntier",289:"Letarking",290:"Nincada",291:"Ninjask",292:"Schneppke",293:"Wailnuss",294:"Wailmer",295:"Wailord",296:"Makuhita",297:"Hariyama",298:"Azurill",299:"Nasgnet",300:"Fühlsam",301:"Eneco",302:"Zobiris",303:"Flunkifer",304:"Stollunior",305:"Stollrak",306:"Stolloss",307:"Meditie",308:"Meditalis",309:"Plusle",310:"Minun",311:"Plusle",312:"Minun",313:"Volbeat",314:"Illumise",315:"Roselia",316:"Schlukwech",317:"Schlukwech",318:"Kanivanha",319:"Tohaido",320:"Wailmer",321:"Wailord",322:"Camerupt",323:"Camerupt",324:"Torkoal",325:"Spoink",326:"Groink",327:"Spaltoberst",328:"Trapinch",329:"Vibrava",330:"Flügel",331:"Cacnea",332:"Cacturne",333:"Wablu",334:"Altaria",335:"Zangoose",336:"Seviper",337:"Lunastein",338:"Sonnfel",339:"Barschuft",340:"Welsar",341:"Krebscorps",342:"Krebshand",343:"Baltoy",344:"Lepumentas",345:"Liliep",346:"Wielie",347:"Anorith",348:"Armaldo",349:"Barschwa",350:"Milotic",351:"Castaforma",352:"Kecleon",353:"Shuppet",354:"Banette",355:"Zwirrlicht",356:"Banette",357:"Tropius",358:"Palimpalim",359:"Absol",360:"Wablu",361:"Snorunt",362:"Glalie",363:"Spheal",364:"Sealeo",365:"Walrein",366:"Perlu",367:"Huntail",368:"Gorebyss",369:"Relicanth",370:"Liebiskus",371:"Kindwurm",372:"Draschel",373:"Brutalanda",374:"Beldum",375:"Metang",376:"Metagross",377:"Regirock",378:"Regice",379:"Registeel",380:"Latias",381:"Latios",382:"Kyogre",383:"Groudon",384:"Rayquaza",385:"Jirachi",386:"Deoxys",387:"Chelast",388:"Chelcarain",389:"Chelterrar",390:"Panflam",391:"Panpyro",392:"Panferno",393:"Plinfa",394:"Pliprin",395:"Impoleon",396:"Staralili",397:"Staravia",398:"Staraptor",399:"Bidiza",400:"Bidifas",401:"Zirpurze",402:"Zirpeise",403:"Sheinux",404:"Luxio",405:"Luxtra",406:"Knospi",407:"Rosenkreis",408:"Koknodon",409:"Rameidon",410:"Schilterus",411:"Bollterus",412:"Burmy",413:"Wormadam",414:"Moterpel",415:"Combee",416:"Honweisel",417:"Pachirisu",418:"Bamelin",419:"Finbaltro",420:"Pampuli",421:"Charmian",422:"Molluskan",423:"Gastrodon",424:"Ambidiffel",425:"Driftlon",426:"Drifzepeli",427:"Haspiror",428:"Schlapor",429:"Mismagius",430:"Honchkrow",431:"Miauzi",432:"Miauz",433:"Klingplim",434:"Stinktier",435:"Morastox",436:"Bronzel",437:"Bronzong",438:"Bonsly",439:"Mime Jr.",440:"Wonneira",441:"Plaudagei",442:"Morbitesse",443:"Kaumalat",444:"Knarksel",445:"Garchomp",446:"Mampfaxo",447:"Riolu",448:"Lucario",449:"Hippopotas",450:"Hippoterus",451:"Skorupi",452:"Drapion",453:"Glibunkel",454:"Toxiquak",455:"Fletiamo",456:"Finneon",457:"Lumineon",458:"Mantirps",459:"Snover",460:"Voltolos",461:"Weavile",462:"Magnezone",463:"Togepi",464:"Rihornior",465:"Tangoloss",466:"Elevoltek",467:"Magbrant",468:"Togekiss",469:"Yanmega",470:"Leafeon",471:"Glaziola",472:"Skorgla",473:"Mamutel",474:"Porygon-Z",475:"Gallade",476:"Nasgnet",477:"Dusknoir",478:"Frosdedje",479:"Rotom",480:"Uxie",481:"Mesprit",482:"Azelf",483:"Dialga",484:"Palkia",485:"Heatran",486:"Regigigas",487:"Giratina",488:"Cresselia",489:"Phione",490:"Manaphy",491:"Darkrai",492:"Shaymin",493:"Arceus",494:"Victini",495:"Serpifeu",496:"Serpiroyal",497:"Serpiroyal",498:"Floink",499:"Ferkokel",500:"Flambirex",501:"Ottaro",502:"Zwottronin",503:"Admurai",504:"Nagelotz",505:"Nagelpin",506:"Velursi",507:"Griffel",508:"Griffel",509:"Nagelotz",510:"Liepard",511:"Paviat",512:"Simian",513:"Pansear",514:"Simisear",515:"Panwater",516:"Simipour",517:"Traumato",518:"Musharna",519:"Taubsi",520:"Tauboga",521:"Tauboss",522:"Zebstrika",523:"Zeburak",524:"Roggenrola",525:"Bradozon",526:"Gigadoron",527:"Woobat",528:"Swoobat",529:"Duflohm",530:"Duwelbis",531:"Audino",532:"Krokel",533:"Maschollo",534:"Maschock",535:"Tirtouga",536:"Carracosta",537:"Archen",538:"Archeops",539:"Traunfugil",540:"Trauerklos",541:"Knotfisch",542:"Snivy",543:"Servine",544:"Serperior",545:"Tepig",546:"Pignite",547:"Emboar",548:"Oshawott",549:"Dewott",550:"Samurott",551:"Patrat",552:"Watchog",553:"Lillipup",554:"Herdier",555:"Stoutland",556:"Purrloin",557:"Liepard",558:"Pansage",559:"Simisage",560:"Pansear",561:"Simisear",562:"Panpour",563:"Simipour",564:"Munna",565:"Musharna",566:"Pidove",567:"Tranquill",568:"Unfezant",569:"Blitzle",570:"Zebstrika",571:"Roggenrola",572:"Boldore",573:"Gigalith",574:"Woobat",575:"Swoobat",576:"Drilbur",577:"Excadrill",578:"Audino",579:"Timburr",580:"Gurdurr",581:"Conkeldurr",582:"Tympole",583:"Palpitoad",584:"Seismitoad",585:"Throh",586:"Sawk",587:"Sewaddle",588:"Swadloon",589:"Leavanny",590:"Venipede",591:"Whirlipede",592:"Scolipede",593:"Cottonee",594:"Whimsicott",595:"Petilil",596:"Lilligant",597:"Basculin",598:"Sandile",599:"Krokorok",600:"Krookodile",601:"Darumaka",602:"Darmanitan",603:"Maractus",604:"Dwebble",605:"Crustle",606:"Scraggy",607:"Scrafty",608:"Sigilyph",609:"Yamask",610:"Cofagrigus",611:"Tirtouga",612:"Carracosta",613:"Archen",614:"Archeops",615:"Trubbish",616:"Garbodor",617:"Zorua",618:"Zoroark",619:"Minccino",620:"Cinccino",621:"Gothita",622:"Gothorita",623:"Gothitelle",624:"Solosis",625:"Duosion",626:"Reuniclus",627:"Ducklett",628:"Swanna",629:"Vanillite",630:"Vanillish",631:"Vanilluxe",632:"Deerling",633:"Sawsbuck",634:"Emolga",635:"Karrablast",636:"Escavalier",637:"Foongus",638:"Amoonguss",639:"Frillish",640:"Jellicent",641:"Alomomola",642:"Joltik",643:"Galvantula",644:"Ferroseed",645:"Ferrothorn",646:"Klink",647:"Klang",648:"Klinklang",649:"Tynamo",650:"Eelektrik",651:"Eelektross",652:"Elgyem",653:"Beheeyem",654:"Litwick",655:"Lampent",656:"Chandelure",657:"Axew",658:"Fraxure",659:"Haxorus",660:"Cubchoo",661:"Beartic",662:"Cryogonal",663:"Shelmet",664:"Accelgor",665:"Stunfisk",666:"Mienfoo",667:"Mienshao",668:"Druddigon",669:"Golett",670:"Golurk",671:"Pawniard",672:"Bisharp",673:"Bouffalant",674:"Rufflet",675:"Braviary",676:"Vullaby",677:"Mandibuzz",678:"Heatmor",679:"Durant",680:"Deino",681:"Zweilous",682:"Hydreigon",683:"Larvesta",684:"Volcarona",685:"Cobalion",686:"Terrakion",687:"Virizion",688:"Tornadus",689:"Thundurus",690:"Reshiram",691:"Zekrom",692:"Landorus",693:"Kyurem",694:"Keldeo",695:"Meloetta",696:"Genesect",697:"Chespin",698:"Quilladin",699:"Chesnaught",700:"Fennekin",701:"Braixen",702:"Delphox",703:"Froakie",704:"Frogadier",705:"Greninja",706:"Bunnelby",707:"Diggersby",708:"Fletchling",709:"Fletchinder",710:"Talonflame",711:"Scatterbug",712:"Spewpa",713:"Vivillon",714:"Litleo",715:"Pyroar",716:"Flabébé",717:"Floette",718:"Florges",719:"Skiddo",720:"Gogoat",721:"Pancham",722:"Pangoro",723:"Furfrou",724:"Espurr",725:"Meowstic",726:"Honedge",727:"Doublade",728:"Aegislash",729:"Spritzee",730:"Aromatisse",731:"Swirlix",732:"Slurpuff",733:"Inkay",734:"Malamar",735:"Binacle",736:"Barbaracle",737:"Skrelp",738:"Dragalge",739:"Clauncher",740:"Clawitzer",741:"Helioptile",742:"Heliolisk",743:"Tyrunt",744:"Tyrantrum",745:"Amaura",746:"Aurorus",747:"Sylveon",748:"Hawlucha",749:"Dedenne",750:"Carbink",751:"Goomy",752:"Sliggoo",753:"Goodra",754:"Klefki",755:"Phantump",756:"Trevenant",757:"Pumpkaboo",758:"Gourgeist",759:"Bergmite",760:"Avalugg",761:"Noibat",762:"Noivern",763:"Xerneas",764:"Yveltal",765:"Zygarde",766:"Diancie",767:"Hoopa",768:"Volcanion",769:"Rowlet",770:"Dartrix",771:"Decidueye",772:"Litten",773:"Torracat",774:"Incineroar",775:"Popplio",776:"Brionne",777:"Primarina",778:"Pikipek",779:"Trumbeak",780:"Toucannon",781:"Yungoos",782:"Gumshoos",783:"Grubbin",784:"Charjabug",785:"Vikavolt",786:"Crabrawler",787:"Crabominable",788:"Oricorio",789:"Cutiefly",790:"Ribombee",791:"Rockruff",792:"Lycanroc",793:"Wishiwashi",794:"Mareanie",795:"Toxapex",796:"Mudbray",797:"Mudsdale",798:"Dewpider",799:"Araquanid",800:"Fomantis",801:"Lurantis",802:"Morelull",803:"Shiinotic",804:"Salandit",805:"Salazzle",806:"Stufful",807:"Bewear",808:"Bounsweet",809:"Steenee",810:"Tsareena",811:"Comfey",812:"Oranguru",813:"Passimian",814:"Wimpod",815:"Golisopod",816:"Sandygast",817:"Palossand",818:"Pyukumuku",819:"Type: Null",820:"Silvally",821:"Minior",822:"Komala",823:"Turtonator",824:"Togedemaru",825:"Mimikyu",826:"Bruxish",827:"Drampa",828:"Dhelmise",829:"Jangmo-o",830:"Hakamo-o",831:"Kommo-o",832:"Tapu Koko",833:"Tapu Lele",834:"Tapu Bulu",835:"Tapu Fini",836:"Cosmog",837:"Cosmoem",838:"Solgaleo",839:"Lunala",840:"Nihilego",841:"Buzzwole",842:"Pheromosa",843:"Xurkitree",844:"Celesteela",845:"Kartana",846:"Guzzlord",847:"Necrozma",848:"Magearna",849:"Marshadow",850:"Poipole",851:"Naganadel",852:"Stakataka",853:"Blacephalon",854:"Zeraora",855:"Meltan",856:"Melmetal",857:"Grookey",858:"Thwackey",859:"Rillaboom",860:"Scorbunny",861:"Raboot",862:"Cinderace",863:"Sobble",864:"Drizzile",865:"Inteleon",866:"Skwovet",867:"Greedent",868:"Rookidee",869:"Corvisquire",870:"Corviknight",871:"Blipbug",872:"Dottler",873:"Orbeetle",874:"Nickit",875:"Thievul",876:"Gossifleur",877:"Eldegoss",878:"Wooloo",879:"Dubwool",880:"Chewtle",881:"Drednaw",882:"Yamper",883:"Boltund",884:"Rolycoly",885:"Carkol",886:"Coalossal",887:"Applin",888:"Flapple",889:"Appletun",890:"Silicobra",891:"Sandaconda",892:"Cramorant",893:"Arrokuda",894:"Barraskewda",895:"Toxel",896:"Toxtricity",897:"Sizzlipede",898:"Centiskorch",899:"Clobbopus",900:"Grapploct",901:"Sinistea",902:"Polteageist",903:"Hatenna",904:"Hattrem",905:"Hatterene",906:"Impidimp",907:"Morgrem",908:"Grimmsnarl",909:"Obstagoon",910:"Perrserker",911:"Cursola",912:"Sirfetch'd",913:"Mr. Rime",914:"Runerigus",915:"Milcery",916:"Alcremie",917:"Falinks",918:"Pincurchin",919:"Snom",920:"Frosmoth",921:"Stonjourner",922:"Eiscue",923:"Indeedee",924:"Morpeko",925:"Cufant",926:"Copperajah",927:"Dracozolt",928:"Arctozolt",929:"Dracovish",930:"Arctovish",931:"Duraludon",932:"Dreepy",933:"Drakloak",934:"Dragapult",935:"Zacian",936:"Zamazenta",937:"Eternatus",938:"Kubfu",939:"Urshifu",940:"Zarude",941:"Regieleki",942:"Regidrago",943:"Glastrier",944:"Spectrier",945:"Calyrex",946:"Wyrdeer",947:"Kleavor",948:"Ursaluna",949:"Basculegion",950:"Sneasler",951:"Overqwil",952:"Enamorus",953:"Sprigatito",954:"Floragato",955:"Meowscarada",956:"Fuecoco",957:"Crocalor",958:"Skeledirge",959:"Quaxly",960:"Quaxwell",961:"Quaquaval",962:"Lechonk",963:"Oinkologne",964:"Tarountula",965:"Spidops",966:"Nymble",967:"Lokix",968:"Pawmi",969:"Pawmo",970:"Pawmot",971:"Tandemaus",972:"Maushold",973:"Fidough",974:"Dachsbun",975:"Smoliv",976:"Dolliv",977:"Arboliva",978:"Squawkabilly",979:"Nacli",980:"Naclstack",981:"Garganacl",982:"Charcadet",983:"Armarouge",984:"Ceruledge",985:"Tadbulb",986:"Bellibolt",987:"Wattrel",988:"Kilowattrel",989:"Maschiff",990:"Mabosstiff",991:"Shroodle",992:"Grafaiai",993:"Bramblin",994:"Brambleghast",995:"Toedscool",996:"Toedscruel",997:"Klawf",998:"Capsakid",999:"Scovillain",1000:"Rellor",1001:"Rabsca",1002:"Flittle",1003:"Espathra",1004:"Tinkatink",1005:"Tinkatuff",1006:"Tinkaton",1007:"Wiglett",1008:"Wugtrio",1009:"Bombirdier",1010:"Finizen",1011:"Palafin",1012:"Varoom",1013:"Revavroom",1014:"Cyclizar",1015:"Orthworm",1016:"Glimmet",1017:"Glimmora",1018:"Greavard",1019:"Houndstone",1020:"Flamigo",1021:"Cetoddle",1022:"Cetitan",1023:"Veluza",1024:"Dondozo",1025:"Tatsugiri"
+};
+
+const TOTAL = 1025;
+
+// ============================================================
+// FIREBASE KONFIGURATION – hier deine Werte eintragen!
+// Anleitung steht im gelben Kasten auf der Seite
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC-0UlvgHMOsjLupETPiZDZQkMXNXcVOLQ",
+  authDomain: "pokedex-27d1f.firebaseapp.com",
+  databaseURL: "https://pokedex-27d1f-default-rtdb.firebaseio.com",
+  projectId: "pokedex-27d1f",
+  storageBucket: "pokedex-27d1f.firebasestorage.app",
+  messagingSenderId: "38826277",
+  appId: "1:38826277:web:02c1b2ad0eb9d9ea3a6acc",
+};
+let FIREBASE_PATH = "pokedex/users/default/caught";
+// ============================================================
+
+let allPokemon = [];
+let caught = new Set();
+let currentGen = 0;
+let dbRef = null;
+let firebaseReady = false;
+
+const genRanges = [
+  {label:"Alle", min:1, max:1025},
+  {label:"Gen I", min:1, max:151},
+  {label:"Gen II", min:152, max:251},
+  {label:"Gen III", min:252, max:386},
+  {label:"Gen IV", min:387, max:493},
+  {label:"Gen V", min:494, max:649},
+  {label:"Gen VI", min:650, max:721},
+  {label:"Gen VII", min:722, max:809},
+  {label:"Gen VIII", min:810, max:905},
+  {label:"Gen IX", min:906, max:1025}
 ];
 
-// Chunk-Größe: 25 Sets pro Request = ~5-7s, gut unter dem 30s Limit
-const CHUNK_SIZE = 10;
-const TOTAL_CHUNKS = Math.ceil(SETS.length / CHUNK_SIZE);
+const VIEW_KEY = 'pokedex_view_v1';
 
-const BASE_URL = 'https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/cards/en/';
-
-function dedupe(cards) {
-  const seen = new Set();
-  return cards.filter(c => {
-    if (seen.has(c.id)) return false;
-    seen.add(c.id);
-    return true;
+function setView(cols) {
+  const grid = document.getElementById('grid');
+  grid.setAttribute('data-cols', cols);
+  localStorage.setItem(VIEW_KEY, cols);
+  // Update active button
+  document.querySelectorAll('.view-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-v') == cols);
   });
 }
 
-export default {
-  async fetch(request, env, ctx) {
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        }
-      });
+function loadView() {
+  const saved = localStorage.getItem(VIEW_KEY) || 'auto';
+  setView(saved);
+}
+
+function loadCaught() {
+  try {
+    const d = localStorage.getItem('pokedex_caught_v1');
+    if (d) caught = new Set(JSON.parse(d));
+  } catch(e) {}
+}
+
+function saveCaught() {
+  localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
+  if (firebaseReady && window._firebaseSet) {
+    window._firebaseSet([...caught]).catch(e => console.error('Firebase save error:', e));
+  }
+}
+
+function updateSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (status === 'online') {
+    el.innerHTML = '🟢 Echtzeit-Sync aktiv';
+    el.style.color = '#4caf50';
+  } else if (status === 'error') {
+    el.innerHTML = '🔴 Nur lokal (kein Sync)';
+    el.style.color = '#e63946';
+  } else {
+    el.innerHTML = '⏳ Verbinde...';
+    el.style.color = 'var(--text-muted)';
+  }
+}
+
+let currentUserId = null;
+let currentUserName = null;
+
+// Einfaches Hash: name+pin → stabiler Key (kein echter Security-Anspruch)
+async function makeProfileKey(name, pin) {
+  const str = name.toLowerCase().trim() + ':' + pin;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function initFirebase() {
+  if (FIREBASE_CONFIG.apiKey === "DEIN_API_KEY") {
+    document.getElementById('firebase-hint').style.display = 'block';
+    updateSyncStatus('error');
+    return;
+  }
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const { getDatabase, ref, set, onValue } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db = getDatabase(app);
+
+    // Gespeichertes Profil aus localStorage laden
+    const savedProfile = JSON.parse(localStorage.getItem('pokedex_profile') || 'null');
+    if (savedProfile && savedProfile.key && savedProfile.name) {
+      connectUserData(db, ref, set, onValue, savedProfile.key, savedProfile.name);
+    } else {
+      showLoginModal(db, ref, set, onValue);
     }
 
-    const url = new URL(request.url);
-    // /sets → gibt alle verfügbaren Set-IDs von GitHub zurück (gecacht 24h)
-    if (url.pathname === '/sets') {
-      const cacheKey = 'sets-list-v1';
-      if (CACHE) {
-        const cached = await CACHE.get(cacheKey);
-        if (cached) return json(JSON.parse(cached));
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    updateSyncStatus('error');
+  }
+}
+
+function showLoginModal(db, ref, set, onValue) {
+  const modal = document.getElementById('login-modal');
+  modal.style.display = 'flex';
+  document.getElementById('login-submit').onclick = async () => {
+    const name = document.getElementById('login-name-input').value.trim();
+    const pin  = document.getElementById('login-pin-input').value.trim();
+    const err  = document.getElementById('login-error');
+    if (!name) { err.textContent = 'Bitte Name eingeben.'; return; }
+    if (!/^\d{4}$/.test(pin)) { err.textContent = 'PIN muss genau 4 Ziffern haben.'; return; }
+    err.textContent = '';
+    const key = await makeProfileKey(name, pin);
+    // Check if name is already taken by a different key
+    const { get } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+    const nameCheckRef = ref(db, `pokedex/names/${name.toLowerCase().trim()}`);
+    const nameSnap = await get(nameCheckRef);
+    const existingKey = nameSnap.val();
+    if (existingKey && existingKey !== key) {
+      err.textContent = 'Name bereits vergeben – anderen Namen oder richtigen PIN wählen.';
+      return;
+    }
+    // Register name→key mapping
+    await set(ref(db, `pokedex/names/${name.toLowerCase().trim()}`), key);
+    localStorage.setItem('pokedex_profile', JSON.stringify({ key, name }));
+    modal.style.display = 'none';
+    connectUserData(db, ref, set, onValue, key, name);
+  };
+}
+
+function connectUserData(db, ref, set, onValue, key, name) {
+  FIREBASE_PATH = `pokedex/users/${key}/caught`;
+  dbRef = ref(db, FIREBASE_PATH);
+  currentUserId = key;
+  currentUserName = name;
+  document.getElementById('user-display').textContent = `👤 ${name}`;
+  document.getElementById('user-display').style.display = 'inline-block';
+
+  // _firebaseSet MUSS vor onValue definiert sein
+  window._firebaseSet = (data) => set(dbRef, data);
+
+  onValue(dbRef, (snapshot) => {
+    const data = snapshot.val();
+    console.log('[Firebase] onValue key=' + key + ' data=', data);
+    if (data !== null && Array.isArray(data)) {
+      // Firebase hat Daten → übernehmen
+      caught = new Set(data);
+      localStorage.setItem('pokedex_caught_v1', JSON.stringify([...caught]));
+    } else {
+      // Firebase leer → lokale Daten hochladen falls vorhanden
+      const local = JSON.parse(localStorage.getItem('pokedex_caught_v1') || '[]');
+      caught = new Set(local);
+      if (local.length > 0) {
+        console.log('[Firebase] uploading local data:', local.length, 'pokemon');
+        window._firebaseSet(local);
       }
-      // GitHub API: alle Dateien im cards/en Ordner
-      const res = await fetch('https://api.github.com/repos/PokemonTCG/pokemon-tcg-data/contents/cards/en', {
-        headers: { 'User-Agent': 'pokedex-worker' }
-      });
-      if (!res.ok) return json({ error: 'GitHub API error' }, 500);
-      const files = await res.json();
-      const sets = files
-        .filter(f => f.name.endsWith('.json'))
-        .map(f => f.name.replace('.json', ''))
-        .sort();
-      if (CACHE) await CACHE.put(cacheKey, JSON.stringify(sets), { expirationTtl: 86400 });
-      return json(sets);
     }
-
-    // /set?id=X → gibt alle Karten eines Sets zurück (CORS-Proxy)
-    if (url.pathname === '/set') {
-      const setId = (url.searchParams.get('id') || '').trim();
-      if (!setId) return json({ error: 'id required' }, 400);
-      const res = await fetch(`https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/cards/en/${setId}.json`, {
-        cf: { cacheTtl: 86400, cacheEverything: true }
-      });
-      if (!res.ok) return json({ error: 'Set nicht gefunden', status: res.status }, 404);
-      const cards = await res.json();
-      return json(cards);
+    firebaseReady = true;
+    updateSyncStatus('online');
+    if (window._appShown) {
+      renderGrid();
+      updateStats();
+    } else {
+      window._firebaseDataReady = true;
+      maybeShowApp();
     }
+  }, (err) => {
+    console.error('[Firebase] error:', err);
+    updateSyncStatus('error');
+  });
+}
 
-    // POST /cache?name=X → speichert fertig zusammengeführte Karten in KV
-    if (url.pathname === '/cache') {
-      if (request.method === 'OPTIONS') {
-        return new Response(null, { headers: {
-          'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-          'Access-Control-Allow-Methods': 'POST',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        }});
+function updateStats() {
+  const n = caught.size;
+  const pct = ((n / TOTAL) * 100).toFixed(1);
+  document.getElementById('caught-count').textContent = n;
+  document.getElementById('percent-count').textContent = pct + '%';
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function resetAll() {
+  if (!confirm('Wirklich alle Pokémon zurücksetzen?')) return;
+  caught.clear();
+  saveCaught();
+  renderGrid();
+  updateStats();
+}
+
+function buildTabs() {
+  const container = document.getElementById('gen-tabs');
+  genRanges.forEach((g, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'gen-tab' + (i === 0 ? ' active' : '');
+    tab.textContent = g.label;
+    tab.onclick = () => {
+      document.querySelectorAll('.gen-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentGen = i;
+      renderGrid();
+      // Set-View auch neu rendern falls offen
+      if (document.getElementById('filter-set') && document.getElementById('filter-set').value) {
+        onSetFilterChange();
       }
-      if (request.method === 'POST') {
-        const name = (url.searchParams.get('name') || '').trim();
-        if (!name) return json({ error: 'name required' }, 400);
-        const cards = await request.json();
-        await env.TCG_INDEX.put(`cards:${name.toLowerCase()}`, JSON.stringify(cards), { expirationTtl: 60 * 60 * 24 * 30 });
-        return json({ ok: true });
-      }
+    };
+    container.appendChild(tab);
+  });
+}
+
+function getTypeClass(type) {
+  return 't-' + type;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const search = document.getElementById('search').value.toLowerCase().trim();
+  const filterCaught = document.getElementById('filter-caught').value;
+  const filterType = document.getElementById('filter-type').value;
+  const gen = genRanges[currentGen];
+
+  let data = allPokemon.filter(p => {
+    const num = p.id;
+    if (num < gen.min || num > gen.max) return false;
+    if (search) {
+      const deName = (germanNames[num] || '').toLowerCase();
+      const enName = (p.displayNameEn || p.name || '').toLowerCase();
+      const numStr = String(num).padStart(4, '0');
+      if (!deName.includes(search) && !enName.includes(search) && !numStr.includes(search)) return false;
     }
+    if (filterCaught === 'caught' && !caught.has(num)) return false;
+    if (filterCaught === 'missing' && caught.has(num)) return false;
+    if (filterType && !p.types.includes(filterType)) return false;
+    return true;
+  });
 
-    const name = (url.searchParams.get('name') || '').trim();
-    if (!name) return json({ error: 'name parameter required' }, 400);
+  grid.innerHTML = '';
 
-    const nameLower = name.toLowerCase();
+  if (data.length === 0) {
+    grid.innerHTML = '<div class="no-results">Kein Pokémon gefunden 😢</div>';
+    return;
+  }
 
-    // ?chunk=N → durchsucht nur Sets[N*25 .. (N+1)*25]
-    // Gibt zurück: { data: [...], chunk: N, totalChunks: X }
-    // Kein KV nötig – CF cached die GitHub-JSONs, also schnell ab dem 2. Aufruf
-    const chunkParam = url.searchParams.get('chunk');
-    const chunk = chunkParam !== null ? parseInt(chunkParam) : null;
+  const fragment = document.createDocumentFragment();
+  data.forEach(p => {
+    const isCaught = caught.has(p.id);
+    const card = document.createElement('div');
+    card.className = 'poke-card' + (isCaught ? ' caught' : '');
+    card.onclick = () => toggleCaught(p.id, card);
 
-    if (chunk !== null) {
-      const start = chunk * CHUNK_SIZE;
-      const setsSlice = SETS.slice(start, start + CHUNK_SIZE);
+    const typeBadges = p.types.map(t => `<span class="type-badge ${getTypeClass(t)}">${t}</span>`).join('');
 
-      const results = await Promise.all(
-        setsSlice.map(async ([setId, setName, setDate]) => {
+    card.dataset.pid = p.id;
+    card.innerHTML = `
+      <button class="tcg-btn" onclick="openTcgModal(event, ${p.id})" title="TCG Karten anzeigen">?</button>
+      <div class="caught-badge">✨</div>
+      <div class="poke-num">#${String(p.id).padStart(4,'0')}</div>
+      <img class="poke-img ${isCaught ? '' : 'not-caught'}"
+           src="${p.sprite}"
+           alt="${p.name}"
+           loading="lazy"
+           onerror="if(this.dataset.fb){this.src='https://placehold.co/80x80/16162a/7878a0?text=%23'+${p.id};}else{this.dataset.fb=1;this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png';}">
+      <div class="poke-name-de">${germanNames[p.id] || p.name}</div>
+      <div class="poke-name-en">${p.displayNameEn || p.name}</div>
+      <div class="type-badges">${typeBadges}</div>
+    `;
+    fragment.appendChild(card);
+  });
+  grid.appendChild(fragment);
+}
+
+function toggleCaught(id, card) {
+  if (caught.has(id)) {
+    caught.delete(id);
+    card.classList.remove('caught');
+    card.querySelector('.poke-img').classList.add('not-caught');
+  } else {
+    caught.add(id);
+    card.classList.add('caught');
+    card.querySelector('.poke-img').classList.remove('not-caught');
+    // Pop animation
+    card.style.transform = 'scale(1.1)';
+    setTimeout(() => card.style.transform = '', 200);
+  }
+  saveCaught();
+  updateStats();
+}
+
+// Type data per Pokemon (gen1-9 approximate, using pokeapi data baked in)
+const typeData = {
+  1:["grass","poison"],2:["grass","poison"],3:["grass","poison"],4:["fire"],5:["fire"],6:["fire","flying"],7:["water"],8:["water"],9:["water"],10:["bug"],11:["bug"],12:["bug","flying"],13:["bug","poison"],14:["bug","poison"],15:["bug","poison"],16:["normal","flying"],17:["normal","flying"],18:["normal","flying"],19:["normal"],20:["normal"],21:["normal","flying"],22:["normal","flying"],23:["poison"],24:["poison"],25:["electric"],26:["electric"],27:["ground"],28:["ground"],29:["poison"],30:["poison"],31:["poison","ground"],32:["poison"],33:["poison"],34:["poison","ground"],35:["normal","fairy"],36:["normal","fairy"],37:["fire"],38:["fire"],39:["normal","fairy"],40:["normal","fairy"],41:["poison","flying"],42:["poison","flying"],43:["grass","poison"],44:["grass","poison"],45:["grass","poison"],46:["bug","grass"],47:["bug","grass"],48:["bug","poison"],49:["bug","poison"],50:["ground"],51:["ground"],52:["normal"],53:["normal"],54:["water"],55:["water"],56:["fighting"],57:["fighting"],58:["fire"],59:["fire"],60:["water"],61:["water"],62:["water","fighting"],63:["psychic"],64:["psychic"],65:["psychic"],66:["fighting"],67:["fighting"],68:["fighting"],69:["grass","poison"],70:["grass","poison"],71:["grass","poison"],72:["water","poison"],73:["water","poison"],74:["rock","ground"],75:["rock","ground"],76:["rock","ground"],77:["fire"],78:["fire"],79:["water","psychic"],80:["water","psychic"],81:["electric","steel"],82:["electric","steel"],83:["normal","flying"],84:["normal","flying"],85:["normal","flying"],86:["water","ice"],87:["water","ice"],88:["poison"],89:["poison"],90:["water"],91:["water","ice"],92:["ghost","poison"],93:["ghost","poison"],94:["ghost","poison"],95:["rock","ground"],96:["psychic"],97:["psychic"],98:["water"],99:["water"],100:["electric"],101:["electric"],102:["grass","psychic"],103:["grass","psychic"],104:["ground"],105:["ground"],106:["fighting"],107:["fighting"],108:["normal"],109:["poison"],110:["poison"],111:["ground","rock"],112:["ground","rock"],113:["normal"],114:["grass"],115:["normal"],116:["water"],117:["water"],118:["water"],119:["water"],120:["water"],121:["water","psychic"],122:["psychic","fairy"],123:["bug","flying"],124:["ice","psychic"],125:["electric"],126:["fire"],127:["bug"],128:["normal"],129:["water"],130:["water","flying"],131:["water","ice"],132:["normal"],133:["normal"],134:["water"],135:["electric"],136:["fire"],137:["normal"],138:["rock","water"],139:["rock","water"],140:["rock","water"],141:["rock","water"],142:["rock","flying"],143:["normal"],144:["ice","flying"],145:["electric","flying"],146:["fire","flying"],147:["dragon"],148:["dragon"],149:["dragon","flying"],150:["psychic"],151:["psychic"],152:["grass"],153:["grass"],154:["grass"],155:["fire"],156:["fire"],157:["fire"],158:["water"],159:["water"],160:["water"],161:["normal"],162:["normal"],163:["normal","flying"],164:["normal","flying"],165:["bug","flying"],166:["bug","flying"],167:["bug","poison"],168:["bug","poison"],169:["poison","flying"],170:["water","electric"],171:["water","electric"],172:["electric"],173:["normal","fairy"],174:["normal","fairy"],175:["normal","fairy"],176:["normal","fairy"],177:["psychic","flying"],178:["psychic","flying"],179:["electric"],180:["electric"],181:["electric"],182:["grass","fairy"],183:["water","fairy"],184:["water","fairy"],185:["rock"],186:["water"],187:["grass","flying"],188:["grass","flying"],189:["grass","flying"],190:["normal"],191:["grass"],192:["grass"],193:["bug","flying"],194:["water","ground"],195:["water","ground"],196:["psychic"],197:["dark"],198:["dark","flying"],199:["water","psychic"],200:["ghost"],201:["psychic"],202:["psychic"],203:["normal","psychic"],204:["bug","steel"],205:["bug","steel"],206:["normal"],207:["ground","flying"],208:["steel","ground"],209:["fairy"],210:["fairy"],211:["water","poison"],212:["bug","steel"],213:["bug","rock"],214:["bug","fighting"],215:["dark","ice"],216:["normal"],217:["normal"],218:["fire"],219:["fire","rock"],220:["ice","ground"],221:["ice","ground"],222:["water","rock"],223:["water"],224:["water"],225:["ice","flying"],226:["water","flying"],227:["steel","flying"],228:["dark","fire"],229:["dark","fire"],230:["water","dragon"],231:["ground"],232:["ground"],233:["normal"],234:["normal","psychic"],235:["normal"],236:["fighting"],237:["fighting"],238:["ice","psychic"],239:["electric"],240:["fire"],241:["normal"],242:["normal","fairy"],243:["electric"],244:["fire"],245:["water"],246:["rock","ground"],247:["rock","ground"],248:["rock","dark"],249:["psychic","flying"],250:["fire","flying"],251:["psychic","grass"],252:["grass"],253:["grass"],254:["grass"],255:["fire"],256:["fire","fighting"],257:["fire","fighting"],258:["water"],259:["water","ground"],260:["water","ground"],261:["dark"],262:["dark"],263:["normal"],264:["normal"],265:["bug"],266:["bug"],267:["bug","flying"],268:["bug"],269:["bug","poison"],270:["water","grass"],271:["water","grass"],272:["water","grass"],273:["grass"],274:["grass","dark"],275:["grass","dark"],276:["normal","flying"],277:["normal","flying"],278:["water","flying"],279:["water","flying"],280:["psychic","fairy"],281:["psychic","fairy"],282:["psychic","fairy"],283:["water","bug"],284:["water","bug"],285:["grass"],286:["grass","fighting"],287:["normal"],288:["normal"],289:["normal"],290:["bug","ground"],291:["bug","flying"],292:["bug","ghost"],293:["normal"],294:["normal"],295:["water"],296:["fighting"],297:["fighting"],298:["normal","fairy"],299:["rock"],300:["normal","fairy"],301:["normal","fairy"],302:["dark","ghost"],303:["steel","fairy"],304:["steel","rock"],305:["steel","rock"],306:["steel","rock"],307:["fighting","psychic"],308:["fighting","psychic"],309:["electric"],310:["electric"],311:["electric"],312:["electric"],313:["bug"],314:["bug"],315:["grass","poison"],316:["poison"],317:["poison"],318:["water","dark"],319:["water","dark"],320:["water"],321:["water"],322:["fire","ground"],323:["fire","ground"],324:["fire"],325:["psychic"],326:["psychic"],327:["normal"],328:["ground"],329:["ground","dragon"],330:["ground","dragon"],331:["grass"],332:["grass","dark"],333:["normal","flying"],334:["dragon","flying"],335:["normal"],336:["poison"],337:["rock","psychic"],338:["rock","psychic"],339:["water","ground"],340:["water","ground"],341:["water"],342:["water","dark"],343:["ground","psychic"],344:["ground","psychic"],345:["rock","grass"],346:["rock","grass"],347:["rock","bug"],348:["rock","bug"],349:["water"],350:["water"],351:["water"],352:["normal"],353:["ghost"],354:["ghost"],355:["ghost"],356:["ghost"],357:["grass","flying"],358:["psychic","fairy"],359:["dark"],360:["psychic"],361:["ice"],362:["ice"],363:["ice","water"],364:["ice","water"],365:["ice","water"],366:["water"],367:["water"],368:["water"],369:["water","rock"],370:["water"],371:["dragon"],372:["dragon"],373:["dragon","flying"],374:["steel","psychic"],375:["steel","psychic"],376:["steel","psychic"],377:["rock"],378:["ice"],379:["steel"],380:["dragon","psychic"],381:["dragon","psychic"],382:["water"],383:["ground"],384:["dragon","flying"],385:["steel","psychic"],386:["psychic"],387:["grass"],388:["grass"],389:["grass","ground"],390:["fire"],391:["fire","fighting"],392:["fire","fighting"],393:["water"],394:["water"],395:["water","steel"],396:["normal","flying"],397:["normal","flying"],398:["normal","flying"],399:["normal"],400:["normal","water"],401:["bug"],402:["bug","fighting"],403:["electric"],404:["electric"],405:["electric"],406:["grass","poison"],407:["grass","poison"],408:["rock"],409:["rock"],410:["rock","steel"],411:["rock","steel"],412:["bug"],413:["bug","grass"],414:["bug","flying"],415:["bug","flying"],416:["bug","flying"],417:["electric"],418:["water"],419:["water"],420:["grass"],421:["grass","fairy"],422:["water"],423:["water","ground"],424:["normal"],425:["ghost","flying"],426:["ghost","flying"],427:["normal"],428:["normal"],429:["ghost"],430:["dark","flying"],431:["normal"],432:["normal"],433:["psychic","fairy"],434:["poison","dark"],435:["poison","dark"],436:["steel","psychic"],437:["steel","psychic"],438:["rock"],439:["psychic","fairy"],440:["normal","fairy"],441:["normal","flying"],442:["ghost"],443:["dragon"],444:["dragon","ground"],445:["dragon","ground"],446:["normal"],447:["fighting"],448:["fighting","steel"],449:["ground"],450:["ground"],451:["poison","bug"],452:["poison","dark"],453:["poison","fighting"],454:["poison","fighting"],455:["grass"],456:["water"],457:["water"],458:["water","flying"],459:["grass","ice"],460:["grass","ice"],461:["dark","ice"],462:["electric","steel"],463:["normal"],464:["ground","rock"],465:["grass"],466:["electric"],467:["fire"],468:["normal","flying"],469:["bug","flying"],470:["grass"],471:["ice"],472:["ground","flying"],473:["ice","ground"],474:["normal"],475:["psychic","fighting"],476:["rock","steel"],477:["ghost"],478:["ice","ghost"],479:["electric","ghost"],480:["psychic"],481:["psychic"],482:["psychic"],483:["steel","dragon"],484:["water","dragon"],485:["fire","steel"],486:["normal"],487:["ghost","dragon"],488:["psychic"],489:["water"],490:["water"],491:["dark"],492:["grass"],493:["normal"],494:["psychic","fire"],495:["grass"],496:["grass"],497:["grass"],498:["fire"],499:["fire"],500:["fire"],501:["water"],502:["water"],503:["water"],504:["normal"],505:["normal"],506:["normal"],507:["normal"],508:["normal"],509:["dark"],510:["dark"],511:["grass"],512:["grass"],513:["fire"],514:["fire"],515:["water"],516:["water"],517:["psychic"],518:["psychic"],519:["normal","flying"],520:["normal","flying"],521:["normal","flying"],522:["electric"],523:["electric"],524:["rock"],525:["rock"],526:["rock"],527:["psychic","flying"],528:["psychic","flying"],529:["ground","steel"],530:["ground","steel"],531:["normal","fairy"],532:["fighting"],533:["fighting"],534:["fighting"],535:["water"],536:["water","ground"],537:["water","ground"],538:["bug"],539:["bug"],540:["bug"],541:["bug","grass"],542:["bug","grass"],543:["bug","flying"],544:["bug","poison"],545:["bug","steel"],546:["grass","fairy"],547:["grass","fairy"],548:["grass","poison"],549:["grass","poison"],550:["water"],551:["normal"],552:["normal"],553:["normal"],554:["fire"],555:["fire"],556:["grass"],557:["rock","bug"],558:["rock","bug"],559:["dark","fighting"],560:["dark","fighting"],561:["psychic","flying"],562:["ghost"],563:["ghost","ice"],564:["water","rock"],565:["water","rock"],566:["rock","flying"],567:["rock","flying"],568:["poison"],569:["poison"],570:["dark","ice"],571:["dark","ice"],572:["normal"],573:["normal"],574:["psychic","fairy"],575:["psychic","fairy"],576:["psychic","fairy"],577:["psychic"],578:["psychic"],579:["psychic"],580:["water"],581:["water","flying"],582:["ice"],583:["ice","water"],584:["ice","water"],585:["normal","fighting"],586:["normal","fighting"],587:["bug","electric"],588:["bug"],589:["bug","grass"],590:["bug","poison"],591:["bug","poison"],592:["water","ghost"],593:["water","ghost"],594:["water","fairy"],595:["bug","electric"],596:["bug","electric"],597:["grass","steel"],598:["grass","steel"],599:["ground","dark"],600:["ground","dark"],601:["ground","dark"],602:["fire"],603:["fire"],604:["grass"],605:["rock","bug"],606:["rock","bug"],607:["dark","fighting"],608:["dark","fighting"],609:["psychic","flying"],610:["ghost"],611:["ghost"],612:["dragon"],613:["dragon"],614:["rock","dragon"],615:["poison"],616:["poison"],617:["dark"],618:["dark"],619:["normal"],620:["normal"],621:["psychic","fairy"],622:["psychic","fairy"],623:["psychic","fairy"],624:["psychic"],625:["psychic"],626:["psychic"],627:["water","flying"],628:["water","flying"],629:["ice"],630:["ice"],631:["ice","ice"],632:["normal","grass"],633:["normal","grass"],634:["electric"],635:["bug"],636:["bug","steel"],637:["grass","poison"],638:["grass","poison"],639:["water","ghost"],640:["water","ghost"],641:["water","fairy"],642:["bug","electric"],643:["bug","electric"],644:["grass","steel"],645:["grass","steel"],646:["steel"],647:["steel"],648:["steel"],649:["electric"],650:["electric"],651:["electric"],652:["psychic"],653:["psychic"],654:["ghost","fire"],655:["ghost","fire"],656:["ghost","fire"],657:["dragon"],658:["dragon"],659:["dragon"],660:["ice"],661:["ice"],662:["ice"],663:["bug","water"],664:["bug"],665:["ground","electric"],666:["fighting"],667:["fighting"],668:["dragon"],669:["ground","ghost"],670:["ground","ghost"],671:["dark","steel"],672:["dark","steel"],673:["normal"],674:["normal","flying"],675:["normal","flying"],676:["dark","flying"],677:["dark","flying"],678:["fire"],679:["bug","steel"],680:["dark","dragon"],681:["dark","dragon"],682:["dark","dragon"],683:["fire","bug"],684:["fire","bug"],685:["fighting","steel"],686:["rock","fighting"],687:["grass","fighting"],688:["flying","fighting"],689:["electric","flying"],690:["dragon","fire"],691:["dragon","electric"],692:["ground","flying"],693:["dragon","ice"],694:["water","fighting"],695:["normal","psychic"],696:["bug","steel"],697:["grass"],698:["grass","fighting"],699:["grass","fighting"],700:["fire"],701:["fire","psychic"],702:["fire","psychic"],703:["water"],704:["water"],705:["water","dark"],706:["normal"],707:["normal","ground"],708:["normal","flying"],709:["fire","flying"],710:["fire","flying"],711:["bug"],712:["bug"],713:["bug"],714:["fire","normal"],715:["fire","normal"],716:["fairy"],717:["fairy"],718:["fairy"],719:["grass"],720:["grass"],721:["fighting","dark"],722:["fighting","dark"],723:["normal"],724:["normal","psychic"],725:["psychic"],726:["steel","ghost"],727:["steel","ghost"],728:["steel","ghost"],729:["fairy"],730:["fairy"],731:["normal","fairy"],732:["normal","fairy"],733:["dark","psychic"],734:["dark","psychic"],735:["rock","water"],736:["rock","water"],737:["poison","water"],738:["poison","dragon"],739:["water"],740:["water"],741:["electric","normal"],742:["electric","dragon"],743:["rock"],744:["rock","dragon"],745:["rock","ice"],746:["rock","ice"],747:["fairy"],748:["fighting","flying"],749:["electric","fairy"],750:["rock","fairy"],751:["dragon"],752:["dragon"],753:["dragon","water"],754:["steel","fairy"],755:["ghost","grass"],756:["ghost","grass"],757:["ghost","grass"],758:["ghost","grass"],759:["ice"],760:["ice"],761:["dragon","flying"],762:["dragon","flying"],763:["fairy"],764:["dark","flying"],765:["dragon"],766:["rock","fairy"],767:["psychic","ghost"],768:["fire","water"],769:["grass","flying"],770:["grass","flying"],771:["grass","ghost"],772:["fire"],773:["fire"],774:["fire","dark"],775:["water","fairy"],776:["water","fairy"],777:["water","fairy"],778:["normal","flying"],779:["normal","flying"],780:["normal","flying"],781:["normal"],782:["normal"],783:["bug","electric"],784:["bug","electric"],785:["bug","electric"],786:["fighting","ice"],787:["fighting","ice"],788:["normal","flying"],789:["bug","fairy"],790:["bug","fairy"],791:["rock"],792:["rock"],793:["water"],794:["water","poison"],795:["water","poison"],796:["ground"],797:["ground"],798:["water","bug"],799:["water","bug"],800:["grass"],801:["grass"],802:["grass","fairy"],803:["grass","fairy"],804:["fire","poison"],805:["fire","poison"],806:["normal","fighting"],807:["normal","fighting"],808:["grass","fairy"],809:["grass","fairy"],810:["grass","fairy"],811:["fairy"],812:["normal","psychic"],813:["fighting"],814:["bug","water"],815:["bug","water"],816:["ghost","ground"],817:["ghost","ground"],818:["water"],819:["normal"],820:["normal"],821:["rock","flying"],822:["normal","flying"],823:["steel","flying"],824:["bug","electric"],825:["ghost","fairy"],826:["water","psychic"],827:["normal","flying"],828:["ghost","grass"],829:["dragon"],830:["dragon","fighting"],831:["dragon","fighting"],832:["electric","fairy"],833:["psychic","fairy"],834:["grass","fairy"],835:["water","fairy"],836:["psychic"],837:["psychic"],838:["psychic","steel"],839:["psychic","ghost"],840:["rock","poison"],841:["bug","fighting"],842:["bug"],843:["electric"],844:["steel","flying"],845:["grass","steel"],846:["dark","dragon"],847:["psychic"],848:["steel","fairy"],849:["fighting","ghost"],850:["poison","dragon"],851:["poison","dragon"],852:["rock","steel"],853:["fire","ghost"],854:["electric"],855:["steel"],856:["steel"],857:["grass"],858:["grass"],859:["grass"],860:["fire"],861:["fire"],862:["fire"],863:["water"],864:["water"],865:["water"],866:["normal"],867:["normal"],868:["normal","flying"],869:["normal","flying"],870:["steel","flying"],871:["bug"],872:["bug","psychic"],873:["bug","psychic"],874:["dark"],875:["dark"],876:["grass","fairy"],877:["grass","fairy"],878:["normal"],879:["normal"],880:["water"],881:["water","rock"],882:["electric"],883:["electric"],884:["rock","fire"],885:["rock","fire"],886:["rock","fire"],887:["grass","dragon"],888:["grass","dragon"],889:["grass","dragon"],890:["ground"],891:["ground"],892:["normal","flying"],893:["water"],894:["water"],895:["poison","electric"],896:["poison","electric"],897:["fire","bug"],898:["fire","bug"],899:["fighting","water"],900:["fighting","water"],901:["ghost"],902:["ghost"],903:["psychic","fairy"],904:["psychic","fairy"],905:["psychic","fairy"],906:["dark","fairy"],907:["dark","fairy"],908:["dark","fairy"],909:["dark","normal"],910:["steel"],911:["water","ghost"],912:["fighting","flying"],913:["ice","psychic"],914:["ground","ghost"],915:["fairy"],916:["fairy"],917:["fighting"],918:["electric"],919:["ice","bug"],920:["ice","bug"],921:["rock"],922:["ice"],923:["psychic","normal"],924:["electric","dark"],925:["steel"],926:["steel"],927:["electric","dragon"],928:["electric","ice"],929:["water","dragon"],930:["water","ice"],931:["steel","dragon"],932:["dragon","ghost"],933:["dragon","ghost"],934:["dragon","ghost"],935:["fairy","steel"],936:["fighting","steel"],937:["poison","dragon"],938:["fighting"],939:["fighting","dark"],940:["dark","grass"],941:["electric"],942:["dragon"],943:["ice"],944:["ghost"],945:["psychic","grass"],946:["normal","psychic"],947:["bug","rock"],948:["ground","normal"],949:["water","ghost"],950:["fighting","poison"],951:["poison","water"],952:["fairy","flying"],953:["grass"],954:["grass"],955:["grass","dark"],956:["fire"],957:["fire"],958:["fire","ghost"],959:["water"],960:["water"],961:["water","fighting"],962:["normal"],963:["normal"],964:["bug"],965:["bug"],966:["bug"],967:["bug","dark"],968:["electric"],969:["electric","fighting"],970:["electric","fighting"],971:["normal"],972:["normal"],973:["fairy"],974:["fairy"],975:["grass","normal"],976:["grass","normal"],977:["grass","normal"],978:["normal","flying"],979:["rock","salt"],980:["rock"],981:["rock"],982:["fire"],983:["fire","psychic"],984:["fire","ghost"],985:["electric"],986:["electric"],987:["electric","flying"],988:["electric","flying"],989:["dark"],990:["dark"],991:["poison","normal"],992:["poison","normal"],993:["grass","ghost"],994:["grass","ghost"],995:["grass","ground"],996:["grass","ground"],997:["rock"],998:["grass","fire"],999:["grass","fire"],1000:["bug","psychic"],1001:["bug","psychic"],1002:["psychic","flying"],1003:["psychic","flying"],1004:["fairy","steel"],1005:["fairy","steel"],1006:["fairy","steel"],1007:["water","ground"],1008:["water","ground"],1009:["dark","flying"],1010:["water"],1011:["water","fighting"],1012:["poison","steel"],1013:["poison","steel"],1014:["dragon","normal"],1015:["steel","ground"],1016:["rock","poison"],1017:["rock","poison"],1018:["ghost"],1019:["ghost"],1020:["flying","fire"],1021:["ice"],1022:["ice"],1023:["water","psychic"],1024:["water"],1025:["dragon","water"]
+};
+
+async function loadPokemonData() {
+  const loadProg = document.getElementById('load-progress');
+  loadProg.textContent = 'Daten werden aufgebaut...';
+
+  // Build all pokemon from local data (no API needed for basic info)
+  allPokemon = [];
+  for (let id = 1; id <= TOTAL; id++) {
+    allPokemon.push({
+      id,
+      name: (germanNames[id] || 'Pokemon ' + id).toLowerCase(),
+      displayNameEn: getPokemonEnName(id),
+      types: typeData[id] || ['normal'],
+      // Use sprites from a reliable source
+      sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+    });
+  }
+
+  loadProg.textContent = 'Alle 1025 Pokémon bereit!';
+  window._pokemonDataReady = true;
+  maybeShowApp();
+}
+
+function getPokemonEnName(id) {
+  const names = {1:"Bulbasaur",2:"Ivysaur",3:"Venusaur",4:"Charmander",5:"Charmeleon",6:"Charizard",7:"Squirtle",8:"Wartortle",9:"Blastoise",10:"Caterpie",11:"Metapod",12:"Butterfree",13:"Weedle",14:"Kakuna",15:"Beedrill",16:"Pidgey",17:"Pidgeotto",18:"Pidgeot",19:"Rattata",20:"Raticate",21:"Spearow",22:"Fearow",23:"Ekans",24:"Arbok",25:"Pikachu",26:"Raichu",27:"Sandshrew",28:"Sandslash",29:"Nidoran♀",30:"Nidorina",31:"Nidoqueen",32:"Nidoran♂",33:"Nidorino",34:"Nidoking",35:"Clefairy",36:"Clefable",37:"Vulpix",38:"Ninetales",39:"Jigglypuff",40:"Wigglytuff",41:"Zubat",42:"Golbat",43:"Oddish",44:"Gloom",45:"Vileplume",46:"Paras",47:"Parasect",48:"Venonat",49:"Venomoth",50:"Diglett",51:"Dugtrio",52:"Meowth",53:"Persian",54:"Psyduck",55:"Golduck",56:"Mankey",57:"Primeape",58:"Growlithe",59:"Arcanine",60:"Poliwag",61:"Poliwhirl",62:"Poliwrath",63:"Abra",64:"Kadabra",65:"Alakazam",66:"Machop",67:"Machoke",68:"Machamp",69:"Bellsprout",70:"Weepinbell",71:"Victreebel",72:"Tentacool",73:"Tentacruel",74:"Geodude",75:"Graveler",76:"Golem",77:"Ponyta",78:"Rapidash",79:"Slowpoke",80:"Slowbro",81:"Magnemite",82:"Magneton",83:"Farfetch'd",84:"Doduo",85:"Dodrio",86:"Seel",87:"Dewgong",88:"Grimer",89:"Muk",90:"Shellder",91:"Cloyster",92:"Gastly",93:"Haunter",94:"Gengar",95:"Onix",96:"Drowzee",97:"Hypno",98:"Krabby",99:"Kingler",100:"Voltorb",101:"Electrode",102:"Exeggcute",103:"Exeggutor",104:"Cubone",105:"Marowak",106:"Hitmonlee",107:"Hitmonchan",108:"Lickitung",109:"Koffing",110:"Weezing",111:"Rhyhorn",112:"Rhydon",113:"Chansey",114:"Tangela",115:"Kangaskhan",116:"Horsea",117:"Seadra",118:"Goldeen",119:"Seaking",120:"Staryu",121:"Starmie",122:"Mr. Mime",123:"Scyther",124:"Jynx",125:"Electabuzz",126:"Magmar",127:"Pinsir",128:"Tauros",129:"Magikarp",130:"Gyarados",131:"Lapras",132:"Ditto",133:"Eevee",134:"Vaporeon",135:"Jolteon",136:"Flareon",137:"Porygon",138:"Omanyte",139:"Omastar",140:"Kabuto",141:"Kabutops",142:"Aerodactyl",143:"Snorlax",144:"Articuno",145:"Zapdos",146:"Moltres",147:"Dratini",148:"Dragonair",149:"Dragonite",150:"Mewtwo",151:"Mew",152:"Chikorita",153:"Bayleef",154:"Meganium",155:"Cyndaquil",156:"Quilava",157:"Typhlosion",158:"Totodile",159:"Croconaw",160:"Feraligatr",161:"Sentret",162:"Furret",163:"Hoothoot",164:"Noctowl",165:"Ledyba",166:"Ledian",167:"Spinarak",168:"Ariados",169:"Crobat",170:"Chinchou",171:"Lanturn",172:"Pichu",173:"Cleffa",174:"Igglybuff",175:"Togepi",176:"Togetic",177:"Natu",178:"Xatu",179:"Mareep",180:"Flaaffy",181:"Ampharos",182:"Bellossom",183:"Marill",184:"Azumarill",185:"Sudowoodo",186:"Politoed",187:"Hoppip",188:"Skiploom",189:"Jumpluff",190:"Aipom",191:"Sunkern",192:"Sunflora",193:"Yanma",194:"Wooper",195:"Quagsire",196:"Espeon",197:"Umbreon",198:"Murkrow",199:"Slowking",200:"Misdreavus",201:"Unown",202:"Wobbuffet",203:"Girafarig",204:"Pineco",205:"Forretress",206:"Dunsparce",207:"Gligar",208:"Steelix",209:"Snubbull",210:"Granbull",211:"Qwilfish",212:"Scizor",213:"Shuckle",214:"Heracross",215:"Sneasel",216:"Teddiursa",217:"Ursaring",218:"Slugma",219:"Magcargo",220:"Swinub",221:"Piloswine",222:"Corsola",223:"Remoraid",224:"Octillery",225:"Delibird",226:"Mantine",227:"Skarmory",228:"Houndour",229:"Houndoom",230:"Kingdra",231:"Phanpy",232:"Donphan",233:"Porygon2",234:"Stantler",235:"Smeargle",236:"Tyrogue",237:"Hitmontop",238:"Smoochum",239:"Elekid",240:"Magby",241:"Miltank",242:"Blissey",243:"Raikou",244:"Entei",245:"Suicune",246:"Larvitar",247:"Pupitar",248:"Tyranitar",249:"Lugia",250:"Ho-Oh",251:"Celebi",252:"Treecko",253:"Grovyle",254:"Sceptile",255:"Torchic",256:"Combusken",257:"Blaziken",258:"Mudkip",259:"Marshtomp",260:"Swampert",261:"Poochyena",262:"Mightyena",263:"Zigzagoon",264:"Linoone",265:"Wurmple",266:"Silcoon",267:"Beautifly",268:"Cascoon",269:"Dustox",270:"Lotad",271:"Lombre",272:"Ludicolo",273:"Seedot",274:"Nuzleaf",275:"Shiftry",276:"Taillow",277:"Swellow",278:"Wingull",279:"Pelipper",280:"Ralts",281:"Kirlia",282:"Gardevoir",283:"Surskit",284:"Masquerain",285:"Shroomish",286:"Breloom",287:"Slakoth",288:"Vigoroth",289:"Slaking",290:"Nincada",291:"Ninjask",292:"Shedinja",293:"Whismur",294:"Loudred",295:"Exploud",296:"Makuhita",297:"Hariyama",298:"Azurill",299:"Nosepass",300:"Skitty",301:"Delcatty",302:"Sableye",303:"Mawile",304:"Aron",305:"Lairon",306:"Aggron",307:"Meditite",308:"Medicham",309:"Electrike",310:"Manectric",311:"Plusle",312:"Minun",313:"Volbeat",314:"Illumise",315:"Roselia",316:"Gulpin",317:"Swalot",318:"Carvanha",319:"Sharpedo",320:"Wailmer",321:"Wailord",322:"Numel",323:"Camerupt",324:"Torkoal",325:"Spoink",326:"Grumpig",327:"Spinda",328:"Trapinch",329:"Vibrava",330:"Flygon",331:"Cacnea",332:"Cacturne",333:"Swablu",334:"Altaria",335:"Zangoose",336:"Seviper",337:"Lunatone",338:"Solrock",339:"Barboach",340:"Whiscash",341:"Corphish",342:"Crawdaunt",343:"Baltoy",344:"Claydol",345:"Lileep",346:"Cradily",347:"Anorith",348:"Armaldo",349:"Feebas",350:"Milotic",351:"Castform",352:"Kecleon",353:"Shuppet",354:"Banette",355:"Duskull",356:"Dusclops",357:"Tropius",358:"Chimecho",359:"Absol",360:"Wynaut",361:"Snorunt",362:"Glalie",363:"Spheal",364:"Sealeo",365:"Walrein",366:"Clamperl",367:"Huntail",368:"Gorebyss",369:"Relicanth",370:"Luvdisc",371:"Bagon",372:"Shelgon",373:"Salamence",374:"Beldum",375:"Metang",376:"Metagross",377:"Regirock",378:"Regice",379:"Registeel",380:"Latias",381:"Latios",382:"Kyogre",383:"Groudon",384:"Rayquaza",385:"Jirachi",386:"Deoxys",387:"Turtwig",388:"Grotle",389:"Torterra",390:"Chimchar",391:"Monferno",392:"Infernape",393:"Piplup",394:"Prinplup",395:"Empoleon",396:"Starly",397:"Staravia",398:"Staraptor",399:"Bidoof",400:"Bibarel",401:"Kricketot",402:"Kricketune",403:"Shinx",404:"Luxio",405:"Luxray",406:"Budew",407:"Roserade",408:"Cranidos",409:"Rampardos",410:"Shieldon",411:"Bastiodon",412:"Burmy",413:"Wormadam",414:"Mothim",415:"Combee",416:"Vespiquen",417:"Pachirisu",418:"Buizel",419:"Floatzel",420:"Cherubi",421:"Cherrim",422:"Shellos",423:"Gastrodon",424:"Ambipom",425:"Drifloon",426:"Drifblim",427:"Buneary",428:"Lopunny",429:"Mismagius",430:"Honchkrow",431:"Glameow",432:"Purugly",433:"Chingling",434:"Stunky",435:"Skuntank",436:"Bronzor",437:"Bronzong",438:"Bonsly",439:"Mime Jr.",440:"Happiny",441:"Chatot",442:"Spiritomb",443:"Gible",444:"Gabite",445:"Garchomp",446:"Munchlax",447:"Riolu",448:"Lucario",449:"Hippopotas",450:"Hippowdon",451:"Skorupi",452:"Drapion",453:"Croagunk",454:"Toxicroak",455:"Carnivine",456:"Finneon",457:"Lumineon",458:"Mantyke",459:"Snover",460:"Abomasnow",461:"Weavile",462:"Magnezone",463:"Lickilicky",464:"Rhyperior",465:"Tangrowth",466:"Electivire",467:"Magmortar",468:"Togekiss",469:"Yanmega",470:"Leafeon",471:"Glaceon",472:"Gliscor",473:"Mamoswine",474:"Porygon-Z",475:"Gallade",476:"Probopass",477:"Dusknoir",478:"Froslass",479:"Rotom",480:"Uxie",481:"Mesprit",482:"Azelf",483:"Dialga",484:"Palkia",485:"Heatran",486:"Regigigas",487:"Giratina",488:"Cresselia",489:"Phione",490:"Manaphy",491:"Darkrai",492:"Shaymin",493:"Arceus",494:"Victini",495:"Snivy",496:"Servine",497:"Serperior",498:"Tepig",499:"Pignite",500:"Emboar",501:"Oshawott",502:"Dewott",503:"Samurott",504:"Patrat",505:"Watchog",506:"Lillipup",507:"Herdier",508:"Stoutland",509:"Purrloin",510:"Liepard",511:"Pansage",512:"Simisage",513:"Pansear",514:"Simisear",515:"Panpour",516:"Simipour",517:"Munna",518:"Musharna",519:"Pidove",520:"Tranquill",521:"Unfezant",522:"Blitzle",523:"Zebstrika",524:"Roggenrola",525:"Boldore",526:"Gigalith",527:"Woobat",528:"Swoobat",529:"Drilbur",530:"Excadrill",531:"Audino",532:"Timburr",533:"Gurdurr",534:"Conkeldurr",535:"Tympole",536:"Palpitoad",537:"Seismitoad",538:"Throh",539:"Sawk",540:"Sewaddle",541:"Swadloon",542:"Leavanny",543:"Venipede",544:"Whirlipede",545:"Scolipede",546:"Cottonee",547:"Whimsicott",548:"Petilil",549:"Lilligant",550:"Basculin",551:"Sandile",552:"Krokorok",553:"Krookodile",554:"Darumaka",555:"Darmanitan",556:"Maractus",557:"Dwebble",558:"Crustle",559:"Scraggy",560:"Scrafty",561:"Sigilyph",562:"Yamask",563:"Cofagrigus",564:"Tirtouga",565:"Carracosta",566:"Archen",567:"Archeops",568:"Trubbish",569:"Garbodor",570:"Zorua",571:"Zoroark",572:"Minccino",573:"Cinccino",574:"Gothita",575:"Gothorita",576:"Gothitelle",577:"Solosis",578:"Duosion",579:"Reuniclus",580:"Ducklett",581:"Swanna",582:"Vanillite",583:"Vanillish",584:"Vanilluxe",585:"Deerling",586:"Sawsbuck",587:"Emolga",588:"Karrablast",589:"Escavalier",590:"Foongus",591:"Amoonguss",592:"Frillish",593:"Jellicent",594:"Alomomola",595:"Joltik",596:"Galvantula",597:"Ferroseed",598:"Ferrothorn",599:"Klink",600:"Klang",601:"Klinklang",602:"Tynamo",603:"Eelektrik",604:"Eelektross",605:"Elgyem",606:"Beheeyem",607:"Litwick",608:"Lampent",609:"Chandelure",610:"Axew",611:"Fraxure",612:"Haxorus",613:"Cubchoo",614:"Beartic",615:"Cryogonal",616:"Shelmet",617:"Accelgor",618:"Stunfisk",619:"Mienfoo",620:"Mienshao",621:"Druddigon",622:"Golett",623:"Golurk",624:"Pawniard",625:"Bisharp",626:"Bouffalant",627:"Rufflet",628:"Braviary",629:"Vullaby",630:"Mandibuzz",631:"Heatmor",632:"Durant",633:"Deino",634:"Zweilous",635:"Hydreigon",636:"Larvesta",637:"Volcarona",638:"Cobalion",639:"Terrakion",640:"Virizion",641:"Tornadus",642:"Thundurus",643:"Reshiram",644:"Zekrom",645:"Landorus",646:"Kyurem",647:"Keldeo",648:"Meloetta",649:"Genesect",650:"Chespin",651:"Quilladin",652:"Chesnaught",653:"Fennekin",654:"Braixen",655:"Delphox",656:"Froakie",657:"Frogadier",658:"Greninja",659:"Bunnelby",660:"Diggersby",661:"Fletchling",662:"Fletchinder",663:"Talonflame",664:"Scatterbug",665:"Spewpa",666:"Vivillon",667:"Litleo",668:"Pyroar",669:"Flabébé",670:"Floette",671:"Florges",672:"Skiddo",673:"Gogoat",674:"Pancham",675:"Pangoro",676:"Furfrou",677:"Espurr",678:"Meowstic",679:"Honedge",680:"Doublade",681:"Aegislash",682:"Spritzee",683:"Aromatisse",684:"Swirlix",685:"Slurpuff",686:"Inkay",687:"Malamar",688:"Binacle",689:"Barbaracle",690:"Skrelp",691:"Dragalge",692:"Clauncher",693:"Clawitzer",694:"Helioptile",695:"Heliolisk",696:"Tyrunt",697:"Tyrantrum",698:"Amaura",699:"Aurorus",700:"Sylveon",701:"Hawlucha",702:"Dedenne",703:"Carbink",704:"Goomy",705:"Sliggoo",706:"Goodra",707:"Klefki",708:"Phantump",709:"Trevenant",710:"Pumpkaboo",711:"Gourgeist",712:"Bergmite",713:"Avalugg",714:"Noibat",715:"Noivern",716:"Xerneas",717:"Yveltal",718:"Zygarde",719:"Diancie",720:"Hoopa",721:"Volcanion",722:"Rowlet",723:"Dartrix",724:"Decidueye",725:"Litten",726:"Torracat",727:"Incineroar",728:"Popplio",729:"Brionne",730:"Primarina",731:"Pikipek",732:"Trumbeak",733:"Toucannon",734:"Yungoos",735:"Gumshoos",736:"Grubbin",737:"Charjabug",738:"Vikavolt",739:"Crabrawler",740:"Crabominable",741:"Oricorio",742:"Cutiefly",743:"Ribombee",744:"Rockruff",745:"Lycanroc",746:"Wishiwashi",747:"Mareanie",748:"Toxapex",749:"Mudbray",750:"Mudsdale",751:"Dewpider",752:"Araquanid",753:"Fomantis",754:"Lurantis",755:"Morelull",756:"Shiinotic",757:"Salandit",758:"Salazzle",759:"Stufful",760:"Bewear",761:"Bounsweet",762:"Steenee",763:"Tsareena",764:"Comfey",765:"Oranguru",766:"Passimian",767:"Wimpod",768:"Golisopod",769:"Sandygast",770:"Palossand",771:"Pyukumuku",772:"Type: Null",773:"Silvally",774:"Minior",775:"Komala",776:"Turtonator",777:"Togedemaru",778:"Mimikyu",779:"Bruxish",780:"Drampa",781:"Dhelmise",782:"Jangmo-o",783:"Hakamo-o",784:"Kommo-o",785:"Tapu Koko",786:"Tapu Lele",787:"Tapu Bulu",788:"Tapu Fini",789:"Cosmog",790:"Cosmoem",791:"Solgaleo",792:"Lunala",793:"Nihilego",794:"Buzzwole",795:"Pheromosa",796:"Xurkitree",797:"Celesteela",798:"Kartana",799:"Guzzlord",800:"Necrozma",801:"Magearna",802:"Marshadow",803:"Poipole",804:"Naganadel",805:"Stakataka",806:"Blacephalon",807:"Zeraora",808:"Meltan",809:"Melmetal",810:"Grookey",811:"Thwackey",812:"Rillaboom",813:"Scorbunny",814:"Raboot",815:"Cinderace",816:"Sobble",817:"Drizzile",818:"Inteleon",819:"Skwovet",820:"Greedent",821:"Rookidee",822:"Corvisquire",823:"Corviknight",824:"Blipbug",825:"Dottler",826:"Orbeetle",827:"Nickit",828:"Thievul",829:"Gossifleur",830:"Eldegoss",831:"Wooloo",832:"Dubwool",833:"Chewtle",834:"Drednaw",835:"Yamper",836:"Boltund",837:"Rolycoly",838:"Carkol",839:"Coalossal",840:"Applin",841:"Flapple",842:"Appletun",843:"Silicobra",844:"Sandaconda",845:"Cramorant",846:"Arrokuda",847:"Barraskewda",848:"Toxel",849:"Toxtricity",850:"Sizzlipede",851:"Centiskorch",852:"Clobbopus",853:"Grapploct",854:"Sinistea",855:"Polteageist",856:"Hatenna",857:"Hattrem",858:"Hatterene",859:"Impidimp",860:"Morgrem",861:"Grimmsnarl",862:"Obstagoon",863:"Perrserker",864:"Cursola",865:"Sirfetch'd",866:"Mr. Rime",867:"Runerigus",868:"Milcery",869:"Alcremie",870:"Falinks",871:"Pincurchin",872:"Snom",873:"Frosmoth",874:"Stonjourner",875:"Eiscue",876:"Indeedee",877:"Morpeko",878:"Cufant",879:"Copperajah",880:"Dracozolt",881:"Arctozolt",882:"Dracovish",883:"Arctovish",884:"Duraludon",885:"Dreepy",886:"Drakloak",887:"Dragapult",888:"Zacian",889:"Zamazenta",890:"Eternatus",891:"Kubfu",892:"Urshifu",893:"Zarude",894:"Regieleki",895:"Regidrago",896:"Glastrier",897:"Spectrier",898:"Calyrex",899:"Wyrdeer",900:"Kleavor",901:"Ursaluna",902:"Basculegion",903:"Sneasler",904:"Overqwil",905:"Enamorus",906:"Sprigatito",907:"Floragato",908:"Meowscarada",909:"Fuecoco",910:"Crocalor",911:"Skeledirge",912:"Quaxly",913:"Quaxwell",914:"Quaquaval",915:"Lechonk",916:"Oinkologne",917:"Tarountula",918:"Spidops",919:"Nymble",920:"Lokix",921:"Pawmi",922:"Pawmo",923:"Pawmot",924:"Tandemaus",925:"Maushold",926:"Fidough",927:"Dachsbun",928:"Smoliv",929:"Dolliv",930:"Arboliva",931:"Squawkabilly",932:"Nacli",933:"Naclstack",934:"Garganacl",935:"Charcadet",936:"Armarouge",937:"Ceruledge",938:"Tadbulb",939:"Bellibolt",940:"Wattrel",941:"Kilowattrel",942:"Maschiff",943:"Mabosstiff",944:"Shroodle",945:"Grafaiai",946:"Bramblin",947:"Brambleghast",948:"Toedscool",949:"Toedscruel",950:"Klawf",951:"Capsakid",952:"Scovillain",953:"Rellor",954:"Rabsca",955:"Flittle",956:"Espathra",957:"Tinkatink",958:"Tinkatuff",959:"Tinkaton",960:"Wiglett",961:"Wugtrio",962:"Bombirdier",963:"Finizen",964:"Palafin",965:"Varoom",966:"Revavroom",967:"Cyclizar",968:"Orthworm",969:"Glimmet",970:"Glimmora",971:"Greavard",972:"Houndstone",973:"Flamigo",974:"Cetoddle",975:"Cetitan",976:"Veluza",977:"Dondozo",978:"Tatsugiri",979:"Annihilape",980:"Clodsire",981:"Farigiraf",982:"Dudunsparce",983:"Kingambit",984:"Great Tusk",985:"Scream Tail",986:"Brute Bonnet",987:"Flutter Mane",988:"Slither Wing",989:"Sandy Shocks",990:"Iron Treads",991:"Iron Bundle",992:"Iron Hands",993:"Iron Jugulis",994:"Iron Moth",995:"Iron Thorns",996:"Frigibax",997:"Arctibax",998:"Baxcalibur",999:"Gimmighoul",1000:"Gholdengo",1001:"Wo-Chien",1002:"Chien-Pao",1003:"Ting-Lu",1004:"Chi-Yu",1005:"Roaring Moon",1006:"Iron Valiant",1007:"Koraidon",1008:"Miraidon",1009:"Walking Wake",1010:"Iron Leaves",1011:"Dipplin",1012:"Poltchageist",1013:"Sinistcha",1014:"Okidogi",1015:"Munkidori",1016:"Fezandipiti",1017:"Ogerpon",1018:"Archaludon",1019:"Hydrapple",1020:"Gouging Fire",1021:"Raging Bolt",1022:"Iron Boulder",1023:"Iron Crown",1024:"Terapagos",1025:"Pecharunt"};
+  return names[id] || 'Pokemon ' + id;
+}
+
+function maybeShowApp() {
+  if (window._pokemonDataReady && window._firebaseDataReady) {
+    showApp();
+  }
+}
+
+function showApp() {
+  if (window._appShown) return;
+  window._appShown = true;
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('grid').style.display = 'grid';
+  renderGrid();
+  updateStats();
+}
+
+// Init
+buildTabs();
+loadPokemonData();
+initFirebase();
+loadView();
+// Fallback: wenn Firebase nach 5s noch nicht geantwortet hat, App trotzdem zeigen
+setTimeout(() => {
+  if (!window._appShown && window._pokemonDataReady) {
+    window._firebaseDataReady = true;
+    maybeShowApp();
+  }
+}, 5000);
+
+
+
+function tcgImgError(img, fallbackUrl) {
+  if (img.dataset.retried) {
+    // Already tried fallback - hide skeleton and show placeholder
+    img.previousElementSibling.style.display = 'none';
+    img.style.opacity = '0.3';
+    img.style.filter = 'grayscale(1)';
+    img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140"><rect width="100" height="140" fill="%23222"/><text x="50" y="75" text-anchor="middle" font-size="40" fill="%23555">🃏</text></svg>';
+    img.style.opacity = '1';
+    return;
+  }
+  img.dataset.retried = '1';
+  if (fallbackUrl) {
+    img.src = fallbackUrl;
+  }
+}
+
+// ── TCG Modal ──────────────────────────────────────────────
+function openTcgModal(event, pokemonId) {
+  event.stopPropagation(); // Don't toggle caught
+  const pokemon = allPokemon.find(p => p.id === pokemonId);
+  if (!pokemon) return;
+  const modal = document.getElementById('tcg-modal');
+  document.getElementById('modal-img').src = pokemon.sprite;
+  document.getElementById('modal-name').textContent = germanNames[pokemon.id] || pokemon.displayNameEn;
+  document.getElementById('modal-sub').textContent = '#' + String(pokemon.id).padStart(4,'0') + ' · ' + pokemon.displayNameEn;
+  document.getElementById('modal-body').innerHTML = '<div class="modal-loading"><div class="spin"></div><br>Karten werden geladen...</div>';
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  fetchTcgCards(pokemon);
+}
+
+function closeTcgModal() {
+  document.getElementById('tcg-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTcgModal(); });
+
+async function fetchTcgCards(pokemon) {
+  const WORKER_URL = 'https://black-rain-73e9.dennis-guelden.workers.dev';
+  const body = document.getElementById('modal-body');
+  const enName = pokemon.displayNameEn || '';
+  const deName = germanNames[pokemon.id] || enName;
+
+  body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Suche Karten für ${deName}...</div>`;
+
+  try {
+    // Erst prüfen ob KV-Cache vorhanden
+    const cached = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}`);
+    if (!cached.ok) throw new Error('Status ' + cached.status);
+    const cachedData = await cached.json();
+
+    let cards = [];
+
+    if (cachedData.source === 'cache') {
+      cards = cachedData.data || [];
+    } else {
+      // Nicht gecacht - Chunks sequenziell laden mit Progress
+      const totalChunks = cachedData.totalChunks || 17;
+      let allCards = [];
+      for (let i = 0; i < totalChunks; i++) {
+        body.innerHTML = `<div class="modal-loading"><div class="spin"></div><br>Lade Sets... ${i+1}/${totalChunks}</div>`;
+        // Bis zu 3 Versuche pro Chunk
+        for (let attempt = 0; attempt < 3; attempt++) {
           try {
-            const res = await fetch(`${BASE_URL}${setId}.json`, {
-              cf: { cacheTtl: 86400, cacheEverything: true }
-            });
-            if (!res.ok) return [];
-            const cards = await res.json();
-            return cards
-              .filter(c => {
-                const cn = (c.name || '').toLowerCase();
-                // Exakter Match: "Charizard"
-                if (cn === nameLower) return true;
-                // Varianten: "Charizard EX", "Charizard-GX", "M Charizard EX"
-                if (cn.startsWith(nameLower + ' ') || cn.startsWith(nameLower + '-')) return true;
-                // Trainer+Pokemon: "Cynthia's Garchomp", "Brock's Ninetales"
-                if (cn.includes("'s " + nameLower) || cn.endsWith("'s " + nameLower)) return true;
-                return false;
-              })
-              .map(c => ({
-                id: c.id, name: c.name, number: c.number,
-                images: {
-                  small: (c.images && c.images.small) || `https://images.pokemontcg.io/${setId}/${c.number}.png`,
-                  large: (c.images && c.images.large) || `https://images.pokemontcg.io/${setId}/${c.number}_hires.png`,
-                },
-                set: { id: setId, name: setName, releaseDate: setDate }
-              }));
-          } catch(e) { return []; }
-        })
-      );
-
-      const chunkData = dedupe(results.flat());
-      return json({
-        data: chunkData,
-        chunk,
-        totalChunks: TOTAL_CHUNKS,
-        setsInChunk: setsSlice.map(s => s[0])
-      });
-    }
-
-    // Kein chunk-Parameter → aus KV lesen falls vorhanden
-    const kvKey = `cards:${nameLower}`;
-    const cached = await env.TCG_INDEX.get(kvKey);
-    if (cached) {
-      const cards = JSON.parse(cached);
-      // Sicherheits-Dedupe beim Lesen
+            const r = await fetch(`${WORKER_URL}?name=${encodeURIComponent(enName)}&chunk=${i}`);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const d = await r.json();
+            console.log(`Chunk ${i}: ${(d.data||[]).length} Karten, Sets: ${(d.setsInChunk||[]).join(',')}`);
+            allCards = allCards.concat(d.data || []);
+            break; // Erfolg - nächster Chunk
+          } catch(e) {
+            if (attempt === 2) console.warn(`Chunk ${i} fehlgeschlagen nach 3 Versuchen`);
+            else await new Promise(r => setTimeout(r, 500)); // kurz warten
+          }
+        }
+      }
       const seen = new Set();
-      const deduped = cards.filter(c => {
+      cards = allCards.filter(c => {
         if (seen.has(c.id)) return false;
         seen.add(c.id);
         return true;
       });
-      return json({ data: deduped, source: 'cache', count: deduped.length });
+      cards.sort((a, b) => (a.set?.releaseDate || '').localeCompare(b.set?.releaseDate || ''));
+
+      // Nur cachen wenn wir genug Daten haben (mind. alle Chunks erfolgreich)
+      if (cards.length > 0) {
+        fetch(`${WORKER_URL}/cache?name=${encodeURIComponent(enName)}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cards)
+        }).catch(() => {});
+      }
     }
 
-    // Nicht im KV → client soll chunks nutzen
-    return json({ data: [], totalChunks: TOTAL_CHUNKS, useChunks: true });
+    if (cards.length === 0) {
+      body.innerHTML = `<div class="tcg-empty">😔 Keine TCG Karten für <b>${deName}</b> gefunden.</div>`;
+      return;
+    }
+
+    // Nach Set gruppieren (bereits sortiert vom Worker)
+    const sets = {};
+    cards.forEach(card => {
+      const setName = card.set?.name || 'Unbekannt';
+      const setDate = card.set?.releaseDate || '9999/99/99';
+      if (!sets[setName]) sets[setName] = { name: setName, date: setDate, cards: [] };
+      sets[setName].cards.push(card);
+    });
+
+    const sortedSets = Object.values(sets);
+    body.innerHTML = `<div class="modal-count">${cards.length} Karte${cards.length !== 1 ? 'n' : ''} in ${sortedSets.length} Set${sortedSets.length !== 1 ? 's' : ''}</div>`;
+
+    sortedSets.forEach(({ name: setName, date, cards: setCards }) => {
+      const group = document.createElement('div');
+      group.className = 'tcg-set-group';
+      const year = date && date !== '9999/99/99'
+        ? ` <span style="color:var(--text-muted);font-weight:400">(${date.substring(0, 4)})</span>` : '';
+      group.innerHTML = `<div class="tcg-set-title">${setName}${year}</div>`;
+
+      const cardsGrid = document.createElement('div');
+      cardsGrid.className = 'tcg-cards';
+
+      setCards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'tcg-card';
+        cardEl.title = `${card.name} · ${setName} #${card.number}`;
+        cardEl.onclick = () => openCardLightbox(card.images?.large || card.images?.small, card.name, setName, card.number);
+
+        const imgUrl     = card.images?.small || '';
+        const imgUrlHigh = card.images?.large  || '';
+
+        cardEl.innerHTML = `
+          ${imgUrl
+            ? `<div class="card-img-wrap">
+                <div class="card-img-skeleton"></div>
+                <img src="${imgUrl}" alt="${card.name}" loading="lazy"
+                     onload="this.previousElementSibling.style.display='none';this.style.opacity='1'"
+                     onerror="tcgImgError(this, '${imgUrlHigh}')"
+                     style="opacity:0;transition:opacity 0.3s;position:relative;z-index:1">
+               </div>`
+            : `<div style="aspect-ratio:0.715;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:20px">🃏</div>`
+          }
+          <div class="tcg-card-name">#${card.number || '?'}</div>
+        `;
+        cardsGrid.appendChild(cardEl);
+      });
+
+      group.appendChild(cardsGrid);
+      body.appendChild(group);
+    });
+
+  } catch(e) {
+    console.error('TCG fetch error:', e);
+    body.innerHTML = `
+      <div class="tcg-error">
+        ⚠️ Karten konnten nicht geladen werden.<br>
+        <span style="font-size:11px;color:var(--text-muted);margin-top:8px;display:block">
+          ${e.message}
+        </span>
+      </div>`;
   }
-};
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-    }
-  });
 }
+
+// ── SET VIEW ─────────────────────────────────────────────
+let SETS_META = []; // wird dynamisch vom Worker geladen
+const WORKER_URL_SET = 'https://black-rain-73e9.dennis-guelden.workers.dev';
+
+// Populate set dropdown
+// Cache für Set-Karten (name→pokemonNames)
+const setCardCache = {};
+
+function getSetPokemonCount(cards) {
+  // Nur echte Pokemon-Karten (keine Trainer/Energie)
+  return cards.filter(c => c.supertype === 'Pokémon').length;
+}
+
+function getSetCaughtCount(cards) {
+  // Wie viele Pokemon aus diesem Set hat der User gefangen
+  // Vergleich über normalisierten Namen mit caught-IDs
+  const pokemonCards = cards.filter(c => c.supertype === 'Pokémon');
+  if (!allPokemon.length) return 0;
+  let count = 0;
+  for (const card of pokemonCards) {
+    const cardNameLower = card.name.toLowerCase().replace(/[^a-z]/g, '');
+    const found = allPokemon.find(p => {
+      const pNameLower = p.name.toLowerCase().replace(/[^a-z]/g, '');
+      return cardNameLower.startsWith(pNameLower) || pNameLower === cardNameLower;
+    });
+    if (found && caught.has(found.id)) count++;
+  }
+  return count;
+}
+
+function updateSetDropdownPercents() {
+  const sel = document.getElementById('filter-set');
+  for (const opt of sel.options) {
+    if (!opt.value) continue;
+    const cards = setCardCache[opt.value];
+    if (!cards) continue;
+    const total = getSetPokemonCount(cards);
+    if (total === 0) continue;
+    const got = getSetCaughtCount(cards);
+    const pct = Math.round(got / total * 100);
+    const meta = SETS_META.find(s => s[0] === opt.value);
+    opt.textContent = `${meta[1]} (${meta[2]}) — ${pct}% (${got}/${total})`;
+  }
+}
+
+async function initSetSelect() {
+  const sel = document.getElementById('filter-set');
+  sel.innerHTML = '<option value="">📦 Set laden...</option>';
+  try {
+    const res = await fetch('https://black-rain-73e9.dennis-guelden.workers.dev/sets');
+    const sets = await res.json();
+    // sets = [{id, name, year, releaseDate}] sortiert nach releaseDate
+    SETS_META = sets.map(s => [s.id, s.name, s.year]);
+    sel.innerHTML = '<option value="">📦 Set-Ansicht...</option>';
+    SETS_META.forEach(([id, name, year]) => {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = `${name} (${year})`;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('Set-Liste konnte nicht geladen werden:', e);
+    sel.innerHTML = '<option value="">⚠️ Sets nicht verfügbar</option>';
+  }
+}
+initSetSelect();
+
+async function onSetFilterChange() {
+  const setId = document.getElementById('filter-set').value;
+  if (!setId) {
+    // Back to normal view
+    document.getElementById('grid').style.display = '';
+    document.getElementById('set-view').style.display = 'none';
+    return;
+  }
+  // Show set view, hide pokemon grid
+  document.getElementById('grid').style.display = 'none';
+  const setView = document.getElementById('set-view');
+  const setGrid = document.getElementById('set-view-grid');
+  const setTitle = document.getElementById('set-view-title');
+  const meta = SETS_META.find(s => s[0] === setId);
+  setView.style.display = 'block';
+  setTitle.textContent = `📦 ${meta ? meta[1] + ' (' + meta[2] + ')' : setId} — wird geladen...`;
+  setGrid.innerHTML = '<div style="color:var(--text-muted);padding:20px">Lade Karten...</div>';
+
+  try {
+    const res = await fetch(`https://black-rain-73e9.dennis-guelden.workers.dev/set?id=${setId}`);
+    if (!res.ok) throw new Error('Set nicht gefunden');
+    const cards = await res.json();
+    setTitle.textContent = `📦 ${meta ? meta[1] + ' (' + meta[2] + ')' : setId} — ${cards.length} Karten`;
+    setGrid.innerHTML = '';
+    // Cache für % Berechnung
+    setCardCache[setId] = cards;
+    updateSetDropdownPercents();
+
+    // Pokemon-count nur aus Pokemon-Karten
+    const pokemonCards = cards.filter(c => c.supertype === 'Pokémon');
+    const totalPoke = pokemonCards.length;
+    let caughtPoke = 0;
+    if (allPokemon) {
+      for (const card of pokemonCards) {
+        const cardNameLower = card.name.toLowerCase().replace(/[^a-z]/g,'');
+        const found = allPokemon.find(p => {
+          const pn = p.name.toLowerCase().replace(/[^a-z]/g,'');
+          return cardNameLower.startsWith(pn) || pn === cardNameLower;
+        });
+        if (found && caught.has(found.id)) caughtPoke++;
+      }
+    }
+    const pct = totalPoke > 0 ? Math.round(caughtPoke/totalPoke*100) : 0;
+    setTitle.textContent = `📦 ${meta ? meta[1] + ' (' + meta[2] + ')' : setId} — ${cards.length} Karten · ${pct}% gefangen (${caughtPoke}/${totalPoke} Pokémon)`;
+
+    // Gen-Filter: nutzt dieselben genRanges wie die Hauptansicht
+    const genFilter = genRanges[currentGen]; // currentGen=0 → "Alle"
+    const filteredCards = (genFilter && genFilter.min > 1) ? cards.filter(card => {
+      if (card.supertype !== 'Pokémon') return true; // Trainer immer zeigen
+      const cn = card.name.toLowerCase().replace(/[^a-z]/g,'');
+      const found = allPokemon.find(p => {
+        const pn = p.name.toLowerCase().replace(/[^a-z]/g,'');
+        return cn.startsWith(pn) || pn === cn;
+      });
+      if (!found) return true;
+      return found.id >= genFilter.min && found.id <= genFilter.max;
+    }) : cards;
+
+    filteredCards.forEach(card => {
+      const imgUrl = (card.images && card.images.small) || `https://images.pokemontcg.io/${setId}/${card.number}.png`;
+      const imgLarge = (card.images && card.images.large) || `https://images.pokemontcg.io/${setId}/${card.number}_hires.png`;
+
+      // Ist dieses Pokemon gefangen?
+      let isCaught = false;
+      if (card.supertype === 'Pokémon' && allPokemon) {
+        const cardNameLower = card.name.toLowerCase().replace(/[^a-z]/g,'');
+        const found = allPokemon.find(p => {
+          const pn = p.name.toLowerCase().replace(/[^a-z]/g,'');
+          return cardNameLower.startsWith(pn) || pn === cardNameLower;
+        });
+        if (found && caught.has(found.id)) isCaught = true;
+      }
+
+      const el = document.createElement('div');
+      el.style.cssText = 'cursor:pointer;border-radius:8px;overflow:hidden;background:var(--card);transition:transform 0.2s;position:relative';
+      el.onmouseenter = () => el.style.transform = 'scale(1.04)';
+      el.onmouseleave = () => el.style.transform = '';
+      el.onclick = () => openCardLightbox(imgLarge, card.name, meta ? meta[1] : setId, card.number);
+      el.innerHTML = `
+        <div style="position:relative">
+          <div style="aspect-ratio:0.715;background:var(--border);position:absolute;inset:0;border-radius:8px"></div>
+          <img src="${imgUrl}" alt="${card.name}" loading="lazy"
+               style="width:100%;display:block;border-radius:8px;position:relative;z-index:1;opacity:0;transition:opacity 0.3s"
+               onload="this.style.opacity=1;this.previousElementSibling.style.display='none'"
+               onerror="this.previousElementSibling.innerHTML='🃏';this.remove()">
+          ${isCaught ? '<div style="position:absolute;top:4px;right:4px;font-size:14px;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.8))"><img src="Pokebola-pokeball-png-0.png" style="width:20px;height:20px;object-fit:contain;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9))"></div>' : ''}
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);padding:3px 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${card.name}</div>
+      `;
+      setGrid.appendChild(el);
+    });
+  } catch(e) {
+    setGrid.innerHTML = `<div style="color:var(--text-muted);padding:20px">⚠️ ${e.message}</div>`;
+  }
+}
+
+function showUserMenu() {
+  const name = currentUserName || 'Unbekannt';
+  const action = confirm(`Angemeldet als: ${name}\n\nProfil wechseln? (Abmelden)\n\nOK = abmelden, Abbrechen = bleiben`);
+  if (action) {
+    localStorage.removeItem('pokedex_profile');
+    location.reload();
+  }
+}
+
+function openCardLightbox(imgUrl, name, setName, number) {
+  const lb = document.getElementById('card-lightbox');
+  document.getElementById('card-lightbox-img').src = imgUrl || '';
+  document.getElementById('card-lightbox-label').textContent = `${name} · ${setName} #${number}`;
+  lb.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeCardLightbox() {
+  document.getElementById('card-lightbox').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCardLightbox(); });
+
+function toggleFilters() {
+  const panel = document.getElementById('controls-panel');
+  const icon = document.getElementById('filter-toggle-icon');
+  const collapsed = panel.classList.toggle('collapsed');
+  icon.textContent = collapsed ? '▼' : '▲';
+  localStorage.setItem('filtersCollapsed', collapsed);
+}
+
+// Restore collapse state
+if (localStorage.getItem('filtersCollapsed') === 'true') {
+  document.getElementById('controls-panel').classList.add('collapsed');
+  document.getElementById('filter-toggle-icon').textContent = '▼';
+}
+
+document.getElementById('search').addEventListener('input', renderGrid);
+document.getElementById('filter-caught').addEventListener('change', renderGrid);
+document.getElementById('filter-type').addEventListener('change', renderGrid);
+</script>
+
+
+<!-- Login Modal -->
+<div id="login-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:10000;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:32px;max-width:340px;width:90%;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🎮</div>
+    <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:8px">Willkommen!</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px">Name + PIN = dein persönliches Profil.<br>Gleicher Name + PIN = gleiche Daten.</div>
+    <input id="login-name-input" type="text" placeholder="Name..." maxlength="20" autocomplete="off"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:16px;box-sizing:border-box;margin-bottom:10px;font-family:Nunito,sans-serif">
+    <input id="login-pin-input" type="password" placeholder="4-stelliger PIN..." maxlength="4" inputmode="numeric" autocomplete="off"
+      style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:16px;box-sizing:border-box;margin-bottom:6px;font-family:Nunito,sans-serif;letter-spacing:4px;text-align:center"
+      onkeydown="if(event.key==='Enter')document.getElementById('login-submit').click()">
+    <div id="login-error" style="color:#e63946;font-size:12px;min-height:18px;margin-bottom:8px"></div>
+    <button id="login-submit" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif">
+      Einloggen ✓
+    </button>
+  </div>
+</div>
+
+<!-- Card Lightbox -->
+<div id="card-lightbox" onclick="closeCardLightbox()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px">
+  <img id="card-lightbox-img" src="" alt="" style="max-width:min(90vw,400px);max-height:80vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,0.8);object-fit:contain">
+  <div id="card-lightbox-label" style="color:#fff;font-size:14px;text-align:center;opacity:0.8"></div>
+  <button onclick="closeCardLightbox()" style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:24px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+</div>
+<!-- TCG Modal -->
+<div class="modal-overlay" id="tcg-modal" onclick="if(event.target===this)closeTcgModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <img id="modal-img" src="" alt="">
+      <div class="modal-header-info">
+        <div class="modal-header-name" id="modal-name"></div>
+        <div class="modal-header-sub" id="modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeTcgModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="modal-loading">
+        <div class="spin"></div><br>Karten werden geladen...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PWA Install Banner -->
+<div id="install-banner">
+  <button class="banner-close" onclick="closeBanner()">✕</button>
+  <div class="banner-title">📱 Als App installieren</div>
+  <div class="banner-text">Füge den Pokédex zum Homescreen hinzu – funktioniert wie eine echte App!</div>
+  <div class="banner-steps">
+    1️⃣ Tippe auf <strong>Teilen</strong> <span style="font-size:15px">⬆️</span><br>
+    2️⃣ Wähle <strong>„Zum Home-Bildschirm"</strong><br>
+    3️⃣ Tippe <strong>„Hinzufügen"</strong>
+  </div>
+  <button class="btn" onclick="closeBanner()" style="width:100%;text-align:center">Verstanden! 👍</button>
+</div>
+
+<!-- Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// Show install banner on iOS after 2 seconds if not already installed
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+function isInStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+}
+function closeBanner() {
+  document.getElementById('install-banner').style.display = 'none';
+  localStorage.setItem('pwa_banner_dismissed', '1');
+}
+
+setTimeout(() => {
+  const dismissed = localStorage.getItem('pwa_banner_dismissed');
+  if (isIOS() && !isInStandaloneMode() && !dismissed) {
+    document.getElementById('install-banner').style.display = 'block';
+  }
+}, 2000);
+</script>
+
+</body>
+</html>
